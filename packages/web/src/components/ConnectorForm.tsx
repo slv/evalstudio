@@ -1,62 +1,20 @@
-import { useState, useEffect } from "react";
-import {
-  useConnector,
-  useCreateConnector,
-  useUpdateConnector,
-  useDeleteConnector,
-} from "../hooks/useConnectors";
-import { ConnectorType, LangGraphConnectorConfig } from "../lib/api";
-import { HeadersEditor } from "./HeadersEditor";
+import { useState } from "react";
+import { useCreateConnector } from "../hooks/useConnectors";
+import type { ConnectorType, LangGraphConnectorConfig } from "../lib/api";
 
 interface ConnectorFormProps {
-  connectorId: string | null;
+  connectorId: null;
   onClose: () => void;
 }
 
-export function ConnectorForm({ connectorId, onClose }: ConnectorFormProps) {
+export function ConnectorForm({ onClose }: ConnectorFormProps) {
   const [name, setName] = useState("");
   const [type, setType] = useState<ConnectorType>("langgraph");
   const [baseUrl, setBaseUrl] = useState("");
-  const [customHeaders, setCustomHeaders] = useState<Array<{ key: string; value: string }>>([]);
   const [assistantId, setAssistantId] = useState("");
-  const [configurableJson, setConfigurableJson] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: existingConnector } = useConnector(connectorId);
   const createConnector = useCreateConnector();
-  const updateConnector = useUpdateConnector();
-  const deleteConnector = useDeleteConnector();
-
-  const isEditing = !!connectorId;
-  const isPending = createConnector.isPending || updateConnector.isPending || deleteConnector.isPending;
-
-  useEffect(() => {
-    if (existingConnector) {
-      setName(existingConnector.name);
-      setType(existingConnector.type);
-      setBaseUrl(existingConnector.baseUrl);
-
-      // Load custom headers
-      if (existingConnector.headers && Object.keys(existingConnector.headers).length > 0) {
-        setCustomHeaders(
-          Object.entries(existingConnector.headers).map(([key, value]) => ({ key, value }))
-        );
-      } else {
-        setCustomHeaders([]);
-      }
-
-      // Extract assistantId and configurable from config for langgraph connectors
-      if (existingConnector.type === "langgraph" && existingConnector.config) {
-        const lgConfig = existingConnector.config as LangGraphConnectorConfig;
-        setAssistantId(lgConfig.assistantId || "");
-        if (lgConfig.configurable && Object.keys(lgConfig.configurable).length > 0) {
-          setConfigurableJson(JSON.stringify(lgConfig.configurable, null, 2));
-        } else {
-          setConfigurableJson("");
-        }
-      }
-    }
-  }, [existingConnector]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,79 +30,33 @@ export function ConnectorForm({ connectorId, onClose }: ConnectorFormProps) {
       return;
     }
 
-    // AssistantId is required
     if (!assistantId.trim()) {
       setError("Assistant ID is required");
       return;
     }
 
-    // Build custom headers object
-    const headersWithValues = customHeaders.filter((h) => h.key.trim());
-    const headers: Record<string, string> | undefined =
-      headersWithValues.length > 0
-        ? Object.fromEntries(headersWithValues.map((h) => [h.key.trim(), h.value]))
-        : undefined;
-
-    // Build config object
     let config: LangGraphConnectorConfig | undefined;
-
     if (type === "langgraph") {
       config = { assistantId: assistantId.trim() };
-
-      if (configurableJson.trim()) {
-        try {
-          const configurable = JSON.parse(configurableJson);
-          config = { ...config, configurable };
-        } catch {
-          setError("Invalid JSON in configurable");
-          return;
-        }
-      }
     }
 
     try {
-      if (isEditing && connectorId) {
-        await updateConnector.mutateAsync({
-          id: connectorId,
-          input: {
-            name,
-            type,
-            baseUrl,
-            headers,
-            config,
-          },
-        });
-      } else {
-        await createConnector.mutateAsync({
-          name,
-          type,
-          baseUrl,
-          headers,
-          config,
-        });
-      }
+      await createConnector.mutateAsync({
+        name,
+        type,
+        baseUrl,
+        config,
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }
   };
 
-  const handleDelete = async () => {
-    if (!connectorId) return;
-    if (confirm(`Delete connector "${name}"?`)) {
-      try {
-        await deleteConnector.mutateAsync(connectorId);
-        onClose();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to delete connector");
-      }
-    }
-  };
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
-        <h3>{isEditing ? "Edit Connector" : "Add Connector"}</h3>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Add Agent</h3>
 
         <form onSubmit={handleSubmit}>
           {error && <div className="form-error">{error}</div>}
@@ -187,50 +99,20 @@ export function ConnectorForm({ connectorId, onClose }: ConnectorFormProps) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="connector-assistant-id">Assistant ID *</label>
+            <label htmlFor="connector-assistant-id">Assistant ID</label>
             <input
               id="connector-assistant-id"
               type="text"
               value={assistantId}
               onChange={(e) => setAssistantId(e.target.value)}
               placeholder="my-assistant"
-              required
             />
             <span className="form-hint">
               The assistant ID to use when invoking the LangGraph agent
             </span>
           </div>
-          <div className="form-group">
-            <label htmlFor="connector-configurable">Configurable (JSON)</label>
-            <textarea
-              id="connector-configurable"
-              value={configurableJson}
-              onChange={(e) => setConfigurableJson(e.target.value)}
-              placeholder={`{\n  "key": "value"\n}`}
-              rows={3}
-            />
-            <span className="form-hint">
-              Optional values sent as config.configurable in invoke requests
-            </span>
-          </div>
-
-          <HeadersEditor
-            headers={customHeaders}
-            onChange={setCustomHeaders}
-            hint="Custom headers sent with every request (e.g. Authorization, API keys)"
-          />
 
           <div className="form-actions">
-            {isEditing && (
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleDelete}
-                disabled={isPending}
-              >
-                Delete
-              </button>
-            )}
             <button
               type="button"
               className="btn btn-secondary"
@@ -241,9 +123,9 @@ export function ConnectorForm({ connectorId, onClose }: ConnectorFormProps) {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isPending}
+              disabled={createConnector.isPending}
             >
-              {isPending ? "Saving..." : isEditing ? "Save" : "Add"}
+              {createConnector.isPending ? "Adding..." : "Add"}
             </button>
           </div>
         </form>

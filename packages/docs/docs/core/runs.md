@@ -21,6 +21,7 @@ import {
   type RunResult,
   type CreateRunInput,
   type CreatePlaygroundRunInput,
+  type CreateChatRunInput,
   type UpdateRunInput,
   type ListRunsOptions,
   type RunProcessorOptions,
@@ -75,7 +76,7 @@ The `messages` array includes all messages stored during execution:
 ### RunStatus
 
 ```typescript
-type RunStatus = "queued" | "pending" | "running" | "completed" | "error";
+type RunStatus = "queued" | "pending" | "running" | "completed" | "error" | "chat";
 ```
 
 - `queued` - Run created and waiting to be executed
@@ -83,6 +84,7 @@ type RunStatus = "queued" | "pending" | "running" | "completed" | "error";
 - `running` - Run is currently executing
 - `completed` - Run finished (check `result.success` for pass/fail). Evaluation failures use this status with `result.success: false`
 - `error` - Run encountered a system error (check error field). Only runs with this status can be retried
+- `chat` - Live chat session in the Agents page. Chat runs are not processed by RunProcessor and are excluded from eval-related run lists
 
 ### RunResult
 
@@ -115,6 +117,16 @@ interface CreatePlaygroundRunInput {
 ```
 
 Used for creating runs directly from scenarios without requiring an eval. The connector is specified directly since there's no parent eval to inherit from. LLM provider for evaluation is resolved from the project's `evalstudio.config.json` `llmSettings`.
+
+### CreateChatRunInput
+
+```typescript
+interface CreateChatRunInput {
+  connectorId: string;           // Required: connector for the chat session
+}
+```
+
+Used for creating live chat runs from the Agents page. Chat runs have `status: "chat"` and are not processed by RunProcessor.
 
 ### UpdateRunInput
 
@@ -220,6 +232,27 @@ const run = await modules.runs.createPlayground({
 
 The run is processed by `RunProcessor` like any other run. The processor checks for `connectorId` on the run itself when `evalId` is not present. LLM provider for evaluation is resolved from the project's `evalstudio.config.json` `llmSettings`.
 
+### modules.runs.createChatRun()
+
+Creates a live chat run for a connector. Used by the Agents page for interactive chat sessions.
+
+```typescript
+async function createChatRun(input: CreateChatRunInput): Promise<Run>;
+```
+
+**Throws**: Error if the connector doesn't exist.
+
+```typescript
+const run = await modules.runs.createChatRun({
+  connectorId: "connector-uuid",
+});
+// run.status === "chat"
+// run.connectorId is stored directly
+// run.evalId, run.scenarioId, run.personaId are undefined
+```
+
+Chat runs are not processed by `RunProcessor`. They are managed interactively through the Agents page live chat interface.
+
 ### modules.runs.get()
 
 Gets a run by its ID.
@@ -291,6 +324,19 @@ async function listByPersona(personaId: string): Promise<Run[]>;
 
 ```typescript
 const personaRuns = await modules.runs.listByPersona("persona-uuid");
+```
+
+### modules.runs.listByConnector()
+
+Lists runs for a specific connector, sorted by creation date (newest first).
+
+```typescript
+async function listByConnector(connectorId: string): Promise<Run[]>;
+```
+
+```typescript
+const connectorRuns = await modules.runs.listByConnector("connector-uuid");
+// Returns all runs (including chat runs) for this connector
 ```
 
 ### modules.runs.update()

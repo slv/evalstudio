@@ -149,13 +149,15 @@ export interface UpdateScenarioInput {
 }
 
 /**
- * A tool call made by an assistant message.
+ * A tool call made by an assistant message (OpenAI format).
  */
 export interface ToolCall {
-  id?: string;
-  name: string;
-  args: Record<string, unknown>;
-  type?: string;
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string; // JSON string, not parsed object
+  };
 }
 
 /**
@@ -349,8 +351,9 @@ export interface TokensUsage {
  * - running: Currently executing
  * - completed: Finished (check result.success for pass/fail)
  * - error: System error occurred (retryable)
+ * - chat: Live chat session (not processed by RunProcessor)
  */
-export type RunStatus = "queued" | "pending" | "running" | "completed" | "error";
+export type RunStatus = "queued" | "pending" | "running" | "completed" | "error" | "chat";
 
 export interface RunResult {
   success: boolean;
@@ -358,13 +361,17 @@ export interface RunResult {
   reason?: string;
 }
 
+export interface CreateChatRunInput {
+  connectorId: string;
+}
+
 export interface Run {
   id: string;
   /** Eval ID (optional for playground runs) */
   evalId?: string;
   personaId?: string;
-  scenarioId: string;
-  /** Connector ID (for playground runs without eval) */
+  scenarioId?: string;
+  /** Connector ID (for playground/chat runs) */
   connectorId?: string;
   /** Execution ID - groups runs created together in a single execution */
   executionId?: number;
@@ -705,11 +712,13 @@ export const api = {
   },
 
   runs: {
-    list: async (projectId: string, evalId?: string, scenarioId?: string, personaId?: string): Promise<Run[]> => {
+    list: async (projectId: string, evalId?: string, scenarioId?: string, personaId?: string, connectorId?: string, status?: RunStatus): Promise<Run[]> => {
       const params = new URLSearchParams();
       if (evalId) params.set("evalId", evalId);
       if (scenarioId) params.set("scenarioId", scenarioId);
       if (personaId) params.set("personaId", personaId);
+      if (connectorId) params.set("connectorId", connectorId);
+      if (status) params.set("status", status);
       const query = params.toString();
       const base = `${projectBase(projectId)}/runs`;
       const url = query ? `${base}?${query}` : base;
@@ -733,6 +742,15 @@ export const api = {
 
     createPlayground: async (projectId: string, input: CreatePlaygroundRunInput): Promise<Run> => {
       const response = await fetch(`${projectBase(projectId)}/runs/playground`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return handleResponse(response);
+    },
+
+    createChat: async (projectId: string, input: CreateChatRunInput): Promise<Run> => {
+      const response = await fetch(`${projectBase(projectId)}/runs/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),

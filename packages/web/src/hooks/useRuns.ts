@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, CreatePlaygroundRunInput, CreateRunInput, Run, UpdateRunInput } from "../lib/api";
+import { api, CreateChatRunInput, CreatePlaygroundRunInput, CreateRunInput, Run, UpdateRunInput } from "../lib/api";
 import { useProjectId } from "./useProjectId";
 
 export function useRuns(evalId?: string) {
@@ -42,6 +42,27 @@ export function useRunsByPersona(personaId: string, options?: { refetchInterval?
     queryFn: () => api.runs.list(projectId, undefined, undefined, personaId),
     enabled: !!personaId,
     refetchInterval: options?.refetchInterval,
+  });
+}
+
+export function useRunsByConnector(connectorId: string, options?: { refetchInterval?: number | false }) {
+  const projectId = useProjectId();
+
+  return useQuery({
+    queryKey: ["runs", projectId, "byConnector", connectorId],
+    queryFn: () => api.runs.list(projectId, undefined, undefined, undefined, connectorId),
+    enabled: !!connectorId,
+    refetchInterval: options?.refetchInterval,
+  });
+}
+
+export function useChatRunsByConnector(connectorId: string) {
+  const projectId = useProjectId();
+
+  return useQuery({
+    queryKey: ["runs", projectId, "byConnector", connectorId, "chat"],
+    queryFn: () => api.runs.list(projectId, undefined, undefined, undefined, connectorId, "chat"),
+    enabled: !!connectorId,
   });
 }
 
@@ -87,6 +108,23 @@ export function useCreatePlaygroundRun() {
       if (run.personaId) {
         queryClient.invalidateQueries({
           queryKey: ["runs", projectId, "byPersona", run.personaId],
+        });
+      }
+    },
+  });
+}
+
+export function useCreateChatRun() {
+  const projectId = useProjectId();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateChatRunInput) => api.runs.createChat(projectId, input),
+    onSuccess: (run) => {
+      queryClient.invalidateQueries({ queryKey: ["runs", projectId] });
+      if (run.connectorId) {
+        queryClient.invalidateQueries({
+          queryKey: ["runs", projectId, "byConnector", run.connectorId],
         });
       }
     },

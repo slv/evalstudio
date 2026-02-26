@@ -14,6 +14,7 @@ REST API endpoints for managing evaluation runs. Runs track the execution of eva
 | GET | `/api/projects/:projectId/runs/:id` | Get run by ID |
 | POST | `/api/projects/:projectId/runs` | Create runs for an eval |
 | POST | `/api/projects/:projectId/runs/playground` | Create a playground run (without eval) |
+| POST | `/api/projects/:projectId/runs/chat` | Create a chat run (live chat session) |
 | PUT | `/api/projects/:projectId/runs/:id` | Update a run |
 | POST | `/api/projects/:projectId/runs/:id/retry` | Retry a run with system errors |
 | DELETE | `/api/projects/:projectId/runs/:id` | Delete a run |
@@ -32,6 +33,8 @@ GET /api/projects/:projectId/runs?evalId=<eval-id>
 | `evalId` | string | Filter runs by eval ID (returns sorted by createdAt desc) |
 | `scenarioId` | string | Filter runs by scenario ID (returns sorted by createdAt desc) |
 | `personaId` | string | Filter runs by persona ID (returns sorted by createdAt desc) |
+| `connectorId` | string | Filter runs by connector ID (returns sorted by createdAt desc, supports additional `status` filter) |
+| `status` | string | Filter runs by status (used with `connectorId` or standalone) |
 
 ### Response
 
@@ -225,6 +228,52 @@ Note: Playground runs store `connectorId` directly on the run since there's no p
 | 400 | Scenario ID is required / Connector ID is required |
 | 404 | Scenario, Connector, or Persona not found |
 
+## Create Chat Run
+
+Creates a live chat run for a connector. Used by the Agents page for interactive chat sessions. Chat runs have `status: "chat"` and are not processed by RunProcessor.
+
+```http
+POST /api/projects/:projectId/runs/chat
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "connectorId": "connector-uuid"
+}
+```
+
+### Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `connectorId` | string | Yes | ID of the connector for the chat session |
+
+### Response
+
+**Status Code:** 201 Created
+
+```json
+{
+  "id": "run-uuid",
+  "connectorId": "connector-uuid",
+  "status": "chat",
+  "messages": [],
+  "startedAt": "2026-02-26T10:00:00.000Z",
+  "createdAt": "2026-02-26T10:00:00.000Z",
+  "updatedAt": "2026-02-26T10:00:00.000Z"
+}
+```
+
+### Error Responses
+
+| Status | Description |
+|--------|-------------|
+| 400 | Connector ID is required |
+| 404 | Connector not found |
+
 ## Update Run
 
 ```http
@@ -256,7 +305,7 @@ Content-Type: application/json
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `status` | string | "queued", "pending", "running", "completed", or "error" |
+| `status` | string | "queued", "pending", "running", "completed", "error", or "chat" |
 | `startedAt` | string | ISO timestamp when run started |
 | `completedAt` | string | ISO timestamp when run completed |
 | `latencyMs` | number | Total execution time in milliseconds |
@@ -346,3 +395,4 @@ Runs have the following status values:
 | `running` | Run is currently executing |
 | `completed` | Run finished (check `result.success` for pass/fail). Evaluation failures use this status |
 | `error` | Run encountered a system error (retryable). Check `error` field for details |
+| `chat` | Live chat session from the Agents page. Not processed by RunProcessor |

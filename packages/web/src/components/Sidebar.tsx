@@ -94,6 +94,16 @@ export function Sidebar({ projectName, projects }: SidebarProps) {
         <div className="sidebar-divider" />
 
         <NavLink
+          to="agents"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? "active" : ""}`
+          }
+        >
+          <span className="sidebar-icon">&#9881;</span>
+          Agents
+        </NavLink>
+
+        <NavLink
           to="scenarios"
           className={({ isActive }) =>
             `sidebar-link ${isActive ? "active" : ""}`
@@ -124,15 +134,6 @@ export function Sidebar({ projectName, projects }: SidebarProps) {
           }
         >
           General
-        </NavLink>
-
-        <NavLink
-          to="settings/connectors"
-          className={({ isActive }) =>
-            `sidebar-link sidebar-link-nested ${isActive ? "active" : ""}`
-          }
-        >
-          Connectors
         </NavLink>
 
         <NavLink

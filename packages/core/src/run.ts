@@ -13,8 +13,9 @@ import type { ExecutionModule } from "./execution.js";
  * - running: Currently executing
  * - completed: Finished (check result.success for pass/fail)
  * - error: System error occurred (retryable)
+ * - chat: Live chat session (not processed by RunProcessor)
  */
-export type RunStatus = "queued" | "pending" | "running" | "completed" | "error";
+export type RunStatus = "queued" | "pending" | "running" | "completed" | "error" | "chat";
 
 export interface RunResult {
   success: boolean;
@@ -50,6 +51,10 @@ export interface CreatePlaygroundRunInput {
   scenarioId: string;
   connectorId: string;
   personaId?: string;
+}
+
+export interface CreateChatRunInput {
+  connectorId: string;
 }
 
 export interface UpdateRunInput {
@@ -191,6 +196,29 @@ export function createRunModule(repo: Repository<Run>, deps: RunModuleDeps) {
       return run;
     },
 
+    async createChatRun(input: CreateChatRunInput): Promise<Run> {
+      const { connectorId } = input;
+
+      const connector = await connectors.get(connectorId);
+      if (!connector) {
+        throw new Error(`Connector with id "${connectorId}" not found`);
+      }
+
+      const now = new Date().toISOString();
+      const run: Run = {
+        id: randomUUID(),
+        connectorId,
+        status: "chat",
+        startedAt: now,
+        messages: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      await repo.save(run);
+      return run;
+    },
+
     async get(id: string): Promise<Run | undefined> {
       return repo.findById(id);
     },
@@ -239,6 +267,13 @@ export function createRunModule(repo: Repository<Run>, deps: RunModuleDeps) {
 
     async listByPersona(personaId: string): Promise<Run[]> {
       return (await repo.findBy({ personaId }))
+        .sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+    },
+
+    async listByConnector(connectorId: string): Promise<Run[]> {
+      return (await repo.findBy({ connectorId }))
         .sort((a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );

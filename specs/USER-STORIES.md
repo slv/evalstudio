@@ -4,7 +4,7 @@
 
 - **Workspace** - A directory containing `evalstudio.config.json` with a project registry and shared defaults. Contains multiple projects under `projects/`.
 - **Project** - A UUID-identified directory under `projects/` with its own `data/` folder and configuration in the workspace config's `projects[]` array. Entities are isolated per project.
-- **Connector** - A project-scoped bridge that connects EvalStudio to a tested agent's API (currently LangGraph)
+- **Connector / Agent** - A project-scoped bridge that connects EvalStudio to a tested agent's API (currently LangGraph). Managed via the Agents page in the web UI.
 - **Eval** - A test collection combining one or more scenarios with a connector. Each scenario can have its own personas and criteria.
 - **Execution** - Groups all runs created together from a single eval execution (auto-increment ID)
 - **Run** - A single test of one scenario/persona combination. Contains the conversation messages, connector response, and evaluation result.
@@ -55,6 +55,14 @@
 [x] As a user, I want to set arbitrary custom headers on connectors so that I can flexibly provide API keys, authorization tokens, and other headers without being limited to predefined auth types
 [x] As a user, I want to set LangGraph configurable values on connectors so that I can pass runtime configuration to my LangGraph agents
 [x] As a user, I want API keys to be redacted in API responses and CLI output so that credentials are not accidentally exposed
+
+### Agents
+
+[x] As a user, I want a dedicated Agents page where I can configure agents (connectors) and interact with them via live chat so that I have a single place to manage and test my agents
+[x] As a user, I want to chat with my agents in real-time from the Agents page so that I can quickly test and debug agent behavior without setting up formal evaluations
+[x] As a user, I want to see chat history in the Agents page sidebar so that I can resume or review previous conversations
+[x] As a user, I want to see an online/offline status indicator for each agent so that I know if the agent is reachable before starting a conversation
+[x] As a user, I want to edit agent settings (name, URL, assistant ID, configurable, headers) inline on the Agents page so that I don't need to navigate to a separate settings page
 
 ### Running Evals
 

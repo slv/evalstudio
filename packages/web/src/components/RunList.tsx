@@ -90,10 +90,11 @@ export function RunList({ evalId, scenarioId, personaId, limit, mode }: RunListP
   const isLoading = isByEval ? loadingByEval : isByScenario ? loadingByScenario : isByPersona ? loadingByPersona : loadingByProject;
   const error = isByEval ? errorByEval : isByScenario ? errorByScenario : isByPersona ? errorByPersona : errorByProject;
 
-  // Apply limit if specified, sorting by createdAt descending
+  // Filter out chat runs and apply limit, sorting by createdAt descending
   const runs = useMemo(() => {
     if (!allRuns) return undefined;
-    const sorted = [...allRuns].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const filtered = allRuns.filter((r) => r.status !== "chat");
+    const sorted = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return limit ? sorted.slice(0, limit) : sorted;
   }, [allRuns, limit]);
 
@@ -225,7 +226,7 @@ export function RunList({ evalId, scenarioId, personaId, limit, mode }: RunListP
     <div className="run-list">
       {runs.map((run) => {
         const persona = run.personaId ? personaMap.get(run.personaId) : null;
-        const scenario = scenarioMap.get(run.scenarioId);
+        const scenario = run.scenarioId ? scenarioMap.get(run.scenarioId) : undefined;
         const evalItem = run.evalId ? evalMap.get(run.evalId) : undefined;
 
         // First column: show scenario (when viewing by eval/persona/project) or eval (when viewing by scenario)

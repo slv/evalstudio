@@ -32,16 +32,22 @@ interface RunParams {
   id: string;
 }
 
+interface CreateChatRunBody {
+  connectorId: string;
+}
+
 interface RunQuerystring {
   evalId?: string;
   scenarioId?: string;
   personaId?: string;
+  connectorId?: string;
+  status?: string;
 }
 
 export async function runsRoute(fastify: FastifyInstance) {
   fastify.get<{ Querystring: RunQuerystring }>("/runs", async (request) => {
     const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
-    const { evalId, scenarioId, personaId } = request.query;
+    const { evalId, scenarioId, personaId, connectorId, status } = request.query;
 
     if (evalId) {
       return await runs.listByEval(evalId);
@@ -53,6 +59,18 @@ export async function runsRoute(fastify: FastifyInstance) {
 
     if (personaId) {
       return await runs.listByPersona(personaId);
+    }
+
+    if (connectorId) {
+      let results = await runs.listByConnector(connectorId);
+      if (status) {
+        results = results.filter((r) => r.status === status);
+      }
+      return results;
+    }
+
+    if (status) {
+      return await runs.list({ status: status as RunStatus });
     }
 
     return await runs.list();
@@ -119,6 +137,36 @@ export async function runsRoute(fastify: FastifyInstance) {
           connectorId,
           personaId,
         });
+        reply.code(201);
+        return run;
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found")) {
+            reply.code(404);
+          } else {
+            reply.code(400);
+          }
+          return { error: error.message };
+        }
+        throw error;
+      }
+    }
+  );
+
+  // Create a chat run (connector only, no scenario)
+  fastify.post<{ Body: CreateChatRunBody }>(
+    "/runs/chat",
+    async (request, reply) => {
+      const { connectorId } = request.body;
+
+      if (!connectorId) {
+        reply.code(400);
+        return { error: "Connector ID is required" };
+      }
+
+      try {
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const run = await runs.createChatRun({ connectorId });
         reply.code(201);
         return run;
       } catch (error) {

@@ -184,10 +184,10 @@ export function ScenarioDetailPage() {
         </div>
         <div className="page-header-actions">
           <button
-            className="btn btn-success"
+            className="btn btn-primary"
             onClick={() => setShowPlayground(true)}
           >
-            <span className="play-icon">▶</span> Playground
+            <span className="play-icon">▶</span> Run
           </button>
           {hasChanges && (
             <>

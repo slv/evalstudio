@@ -58,7 +58,7 @@ evalstudio run list [options]
 | Option | Description |
 |--------|-------------|
 | `-e, --eval <eval>` | Filter by eval ID |
-| `-s, --status <status>` | Filter by status: `queued`, `running`, `completed`, `failed` |
+| `-s, --status <status>` | Filter by status: `queued`, `running`, `completed`, `error`, `chat` |
 | `-l, --limit <number>` | Maximum number of runs to show |
 | `--json` | Output as JSON |
 

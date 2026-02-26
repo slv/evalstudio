@@ -76,6 +76,19 @@ export function useTestConnector() {
   });
 }
 
+export function useConnectorStatus(id: string | null) {
+  const projectId = useProjectId();
+
+  return useQuery({
+    queryKey: ["connectors", projectId, "status", id],
+    queryFn: () => api.connectors.test(projectId, id!),
+    enabled: !!id,
+    refetchInterval: 30_000,
+    retry: false,
+    staleTime: 15_000,
+  });
+}
+
 export function useInvokeConnector() {
   const projectId = useProjectId();
 

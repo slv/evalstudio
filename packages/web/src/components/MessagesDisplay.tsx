@@ -50,10 +50,21 @@ function formatArgValue(value: unknown): string {
 }
 
 /** Renders a tool message as a collapsible box with input (from tool_calls lookup) and output */
+/** Parse tool call arguments from JSON string to entries */
+function parseToolCallArgs(toolCall?: ToolCall): Array<[string, unknown]> {
+  if (!toolCall?.function.arguments) return [];
+  try {
+    const parsed = JSON.parse(toolCall.function.arguments);
+    return typeof parsed === "object" && parsed !== null ? Object.entries(parsed) : [];
+  } catch {
+    return [];
+  }
+}
+
 function ToolMessageDisplay({ message, toolCall }: { message: Message; toolCall?: ToolCall }) {
   const [expanded, setExpanded] = useState(false);
-  const toolName = toolCall?.name || message.name || "unknown";
-  const argEntries = Object.entries(toolCall?.args || {});
+  const toolName = toolCall?.function.name || message.name || "unknown";
+  const argEntries = parseToolCallArgs(toolCall);
 
   return (
     <div className={`run-preview-tool-call ${expanded ? "expanded" : "collapsed"}`}>

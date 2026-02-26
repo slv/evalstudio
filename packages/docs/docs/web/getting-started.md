@@ -39,10 +39,11 @@ The dashboard provides a complete UI for managing all EvalStudio entities:
 - **Personas** — Create personas with descriptions, custom headers, and AI-generated portraits
   <img src="/evalstudio/img/evalstudio-overview-scenario-personas.png" width="80%" />
 
+- **Agents** — Configure agents (connectors) and interact with them via live chat sessions
 - **Performance Charts** — Pass/fail rates, latency scatter plots, and token usage trends per eval, scenario, and persona
   <img src="/evalstudio/img/evalstudio-overview-trends.png" width="80%" />
 
-- **Settings** — Configure connectors, LLM providers, and project settings
+- **Settings** — Configure LLM providers and project settings
 
 ## Building for Production
 

@@ -175,9 +175,10 @@ function buildExecutionData(
   // Per-scenario breakdown
   const scenarioMap = new Map<string, ScenarioResult>();
   for (const run of finishedRuns) {
-    const existing = scenarioMap.get(run.scenarioId) ?? {
-      scenarioId: run.scenarioId,
-      scenarioName: scenarioNames.get(run.scenarioId) ?? run.scenarioId,
+    const sid = run.scenarioId ?? "";
+    const existing = scenarioMap.get(sid) ?? {
+      scenarioId: sid,
+      scenarioName: scenarioNames.get(sid) ?? sid,
       passed: 0,
       failed: 0,
       error: 0,
@@ -195,7 +196,7 @@ function buildExecutionData(
       existing.avgLatency = (existing.avgLatency * (existing.total - 1) + lat) / existing.total;
     }
 
-    scenarioMap.set(run.scenarioId, existing);
+    scenarioMap.set(sid, existing);
   }
 
   const scenarioResults = Array.from(scenarioMap.values());
@@ -204,10 +205,11 @@ function buildExecutionData(
   const personaMap = new Map(personas.map((p) => [p.id, p]));
   const failures: FailureInfo[] = [];
   for (const run of finishedRuns) {
+    const rsid = run.scenarioId ?? "";
     if (run.status === "error" && run.error) {
       failures.push({
         runId: run.id,
-        scenarioName: scenarioNames.get(run.scenarioId) ?? run.scenarioId,
+        scenarioName: scenarioNames.get(rsid) ?? rsid,
         personaId: run.personaId ?? undefined,
         personaName: run.personaId ? personaMap.get(run.personaId)?.name : undefined,
         reason: run.error,
@@ -216,7 +218,7 @@ function buildExecutionData(
     } else if (run.status === "completed" && !run.result?.success && run.result?.reason) {
       failures.push({
         runId: run.id,
-        scenarioName: scenarioNames.get(run.scenarioId) ?? run.scenarioId,
+        scenarioName: scenarioNames.get(rsid) ?? rsid,
         personaId: run.personaId ?? undefined,
         personaName: run.personaId ? personaMap.get(run.personaId)?.name : undefined,
         reason: run.result.reason,

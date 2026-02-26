@@ -93,6 +93,7 @@ export {
   createRunModule,
   type RunModule,
   type RunModuleDeps,
+  type CreateChatRunInput,
   type CreatePlaygroundRunInput,
   type CreateRunInput,
   type ListRunsOptions,

@@ -140,10 +140,12 @@ interface Message {
 }
 
 interface ToolCall {
-  id?: string;
-  name: string;
-  args: Record<string, unknown>;
-  type?: string;
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string; // JSON string, not parsed object
+  };
 }
 
 interface ContentBlock {
@@ -308,7 +310,7 @@ if (result.success && result.messages) {
     // Responses may include tool calls
     if (msg.tool_calls) {
       for (const call of msg.tool_calls) {
-        console.log(`Tool: ${call.name}, Args: ${JSON.stringify(call.args)}`);
+        console.log(`Tool: ${call.function.name}, Args: ${call.function.arguments}`);
       }
     }
   }
