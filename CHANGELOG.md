@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-03-02
+
 ### Added
 
 - **Agents page with live chat** — Connectors are rebranded as "Agents" in the UI. New dedicated Agents page (`/projects/:id/agents/:agentId`) with entity switcher navigation, a Live Chat tab for real-time conversations with agents (messages recorded as runs with new `chat` status), chat history sidebar to resume previous conversations, and an inline Settings tab for editing all agent configuration fields. Online/offline status indicator polls the connector test endpoint.
