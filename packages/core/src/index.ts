@@ -124,23 +124,22 @@ export {
 } from "./prompt.js";
 export { RunProcessor, type RunProcessorOptions } from "./run-processor.js";
 export {
-  evaluateCriteria,
+  runLLMJudge,
   runEvaluators,
-  type CriteriaEvaluationResult,
-  type EvaluateCriteriaInput,
+  type LLMJudgeResult,
+  type LLMJudgeInput,
   type EvaluatorDefinition,
   type EvaluatorContext,
   type EvaluationResult,
   type ScenarioEvaluator,
   type EvaluatorResultEntry,
-  type AggregatedEvaluationResult,
+  type EvaluatorResults,
   type JsonSchema,
 } from "./evaluator.js";
 export {
   EvaluatorRegistry,
   createEvaluatorRegistry,
   defineEvaluator,
-  loadCustomEvaluators,
 } from "./evaluator-registry.js";
 export {
   generatePersonaMessage,

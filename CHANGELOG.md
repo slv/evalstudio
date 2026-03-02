@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Custom evaluator plugin system** — Declare custom evaluators in `evalstudio.config.json` via the `evaluators` field (relative paths or npm packages). They are automatically loaded at startup by the API server and CLI. Use `defineEvaluator()` to author evaluator modules with assertions (pass/fail gates) or metrics (measurements).
+- **`createEvaluatorRegistry()` factory** — New async factory that creates an `EvaluatorRegistry` with built-in evaluators and loads any custom evaluators declared in workspace config. Used by the API server and CLI.
+- **Custom evaluators documentation** — New guide covering evaluator authoring, the `EvaluatorContext` API, `isFinal` pattern for final-turn-only evaluators, config-based loading, and npm package distribution.
+- **Evaluator test suite** — 41 new tests covering `runEvaluators`, `EvaluatorRegistry`, `defineEvaluator`, config-based loading, and run-processor integration with custom evaluators.
+
+### Changed
+
+- **Renamed criteria evaluation API** — `evaluateCriteria()` → `runLLMJudge()`, `CriteriaEvaluationResult` → `LLMJudgeResult`, `EvaluateCriteriaInput` → `LLMJudgeInput`. Clarifies that this is the LLM-as-judge system, distinct from custom evaluators.
+- **`runEvaluators()` returns flat results** — Returns `{ evaluatorResults[], metrics{} }` without aggregate success/score/reason fields. The run processor handles aggregation.
+- **Improved error messages for custom evaluator loading** — Suggests `npm install <package>` for missing npm packages, distinguishes built-in vs custom in conflict errors.
+
 ## [0.7.0] - 2026-03-02
 
 ### Added

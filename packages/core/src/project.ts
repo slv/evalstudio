@@ -83,6 +83,8 @@ export interface ProjectConfig {
 export interface WorkspaceConfig extends ProjectConfig {
   /** Storage backend configuration. Defaults to filesystem when omitted. */
   storage?: StorageConfig;
+  /** Custom evaluator paths (relative files or npm package names). */
+  evaluators?: string[];
   projects: ProjectEntry[];
 }
 

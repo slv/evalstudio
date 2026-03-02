@@ -11,7 +11,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Guides",
-      items: ["guides/langgraph-setup"],
+      items: ["guides/langgraph-setup", "guides/custom-evaluators"],
     },
     {
       type: "html",

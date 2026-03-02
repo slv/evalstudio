@@ -105,15 +105,9 @@ export interface EvaluatorResultEntry {
 }
 
 /**
- * Aggregated result from running all evaluators on a turn.
+ * Result from running all evaluators on a turn.
  */
-export interface AggregatedEvaluationResult {
-  /** True if all assertions passed. */
-  success: boolean;
-  /** Min score across assertions, or undefined if no assertions have scores. */
-  score?: number;
-  /** First assertion failure reason, or "All evaluators passed". */
-  reason: string;
+export interface EvaluatorResults {
   /** Per-evaluator results. */
   evaluatorResults: EvaluatorResultEntry[];
   /** Quick metric lookup: { "tool-call-count": 3, ... } */
@@ -121,15 +115,13 @@ export interface AggregatedEvaluationResult {
 }
 
 /**
- * Runs all evaluators in parallel and aggregates results.
- *
- * - Assertions: all must pass for success. Score = min(assertion scores).
- * - Metrics: tracked but never cause failure. Values stored in metrics map.
+ * Runs all evaluators in parallel and returns raw results.
+ * Does not make pass/fail decisions — the caller interprets the results.
  */
 export async function runEvaluators(
   evaluators: Array<{ definition: EvaluatorDefinition; config: Record<string, unknown> }>,
   context: Omit<EvaluatorContext, "config">
-): Promise<AggregatedEvaluationResult> {
+): Promise<EvaluatorResults> {
   const settled = await Promise.allSettled(
     evaluators.map(async ({ definition, config }) => {
       const result = await definition.evaluate({ ...context, config });
@@ -139,13 +131,10 @@ export async function runEvaluators(
 
   const evaluatorResults: EvaluatorResultEntry[] = [];
   const metrics: Record<string, number> = {};
-  let allAssertionsPassed = true;
-  let minScore: number | undefined;
-  let firstFailureReason: string | undefined;
 
   for (const outcome of settled) {
     if (outcome.status === "rejected") {
-      // Evaluator threw — treat as failed assertion
+      // Evaluator threw — report as failed assertion
       const reason = `Evaluator error: ${outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)}`;
       evaluatorResults.push({
         type: "unknown",
@@ -154,13 +143,11 @@ export async function runEvaluators(
         success: false,
         reason,
       });
-      allAssertionsPassed = false;
-      if (!firstFailureReason) firstFailureReason = reason;
       continue;
     }
 
     const { definition, result } = outcome.value;
-    const entry: EvaluatorResultEntry = {
+    evaluatorResults.push({
       type: definition.type,
       label: definition.label,
       kind: definition.kind,
@@ -168,38 +155,20 @@ export async function runEvaluators(
       value: result.value,
       reason: result.reason,
       metadata: result.metadata,
-    };
-    evaluatorResults.push(entry);
+    });
 
-    if (definition.kind === "metric") {
-      if (result.value !== undefined) {
-        metrics[definition.type] = result.value;
-      }
-    } else {
-      // Assertion
-      if (!result.success) {
-        allAssertionsPassed = false;
-        if (!firstFailureReason) firstFailureReason = result.reason;
-      }
-      if (result.value !== undefined) {
-        minScore = minScore === undefined ? result.value : Math.min(minScore, result.value);
-      }
+    if (definition.kind === "metric" && result.value !== undefined) {
+      metrics[definition.type] = result.value;
     }
   }
 
-  return {
-    success: allAssertionsPassed,
-    score: minScore,
-    reason: firstFailureReason ?? "All evaluators passed",
-    evaluatorResults,
-    metrics,
-  };
+  return { evaluatorResults, metrics };
 }
 
 /**
- * Result of evaluating conversation against success/failure criteria
+ * Result from the LLM-as-judge evaluation
  */
-export interface CriteriaEvaluationResult {
+export interface LLMJudgeResult {
   /** Whether the success criteria has been met */
   successMet: boolean;
   /** Whether the failure criteria has been met */
@@ -213,9 +182,9 @@ export interface CriteriaEvaluationResult {
 }
 
 /**
- * Input for criteria evaluation
+ * Input for LLM-as-judge evaluation
  */
-export interface EvaluateCriteriaInput {
+export interface LLMJudgeInput {
   /** The conversation history to evaluate */
   messages: Message[];
   /** Success criteria to check against */
@@ -269,9 +238,9 @@ function formatConversation(messages: Message[]): string {
 }
 
 /**
- * Parses the LLM response into a CriteriaEvaluationResult
+ * Parses the LLM response into a LLMJudgeResult
  */
-function parseEvaluationResponse(response: string): Omit<CriteriaEvaluationResult, "rawResponse"> {
+function parseEvaluationResponse(response: string): Omit<LLMJudgeResult, "rawResponse"> {
   try {
     // Try to extract JSON from the response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -294,12 +263,12 @@ function parseEvaluationResponse(response: string): Omit<CriteriaEvaluationResul
 }
 
 /**
- * Evaluates conversation against success/failure criteria using an LLM judge.
+ * Runs the LLM-as-judge evaluation against success/failure criteria.
  * Returns the evaluation result indicating whether criteria have been met.
  */
-export async function evaluateCriteria(
-  input: EvaluateCriteriaInput
-): Promise<CriteriaEvaluationResult> {
+export async function runLLMJudge(
+  input: LLMJudgeInput
+): Promise<LLMJudgeResult> {
   const { messages, successCriteria, failureCriteria, llmProvider, model } = input;
 
   // If no criteria defined, return inconclusive

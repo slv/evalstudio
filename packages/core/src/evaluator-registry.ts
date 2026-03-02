@@ -1,5 +1,6 @@
 import type { EvaluatorDefinition } from "./evaluator.js";
 import { builtinEvaluators } from "./evaluators/index.js";
+import { readWorkspaceConfig } from "./project.js";
 
 /**
  * Registry that holds all known evaluator types (built-in + custom).
@@ -47,17 +48,6 @@ export class EvaluatorRegistry {
 }
 
 /**
- * Create a registry with built-in evaluators pre-registered.
- */
-export function createEvaluatorRegistry(): EvaluatorRegistry {
-  const registry = new EvaluatorRegistry();
-  for (const def of builtinEvaluators) {
-    registry.register(def, true);
-  }
-  return registry;
-}
-
-/**
  * Identity function that provides type safety for defining evaluators.
  * Custom evaluator files should `export default defineEvaluator({ ... })`.
  */
@@ -68,13 +58,42 @@ export function defineEvaluator(
 }
 
 /**
+ * Create a registry with built-in evaluators, then load custom evaluators
+ * from the workspace config's evaluators[] paths.
+ *
+ * @param workspaceDir - Workspace root directory (to read config and resolve relative paths)
+ */
+export async function createEvaluatorRegistry(
+  workspaceDir: string
+): Promise<EvaluatorRegistry> {
+  const registry = new EvaluatorRegistry();
+  for (const def of builtinEvaluators) {
+    registry.register(def, true);
+  }
+
+  let evaluatorPaths: string[] | undefined;
+  try {
+    const config = readWorkspaceConfig(workspaceDir);
+    evaluatorPaths = config.evaluators;
+  } catch {
+    // No workspace config yet (e.g., during init) — skip custom evaluators
+  }
+
+  if (evaluatorPaths && evaluatorPaths.length > 0) {
+    await loadCustomEvaluators(registry, evaluatorPaths, workspaceDir);
+  }
+
+  return registry;
+}
+
+/**
  * Load custom evaluators from config paths and register them.
  *
  * @param registry - The registry to add evaluators to
  * @param evaluatorPaths - Array of paths/package names from evalstudio.config.json
  * @param configDir - Directory to resolve relative paths from
  */
-export async function loadCustomEvaluators(
+async function loadCustomEvaluators(
   registry: EvaluatorRegistry,
   evaluatorPaths: string[],
   configDir: string
@@ -92,8 +111,12 @@ export async function loadCustomEvaluators(
       mod = await import(importPath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      const isPackage = !entry.startsWith(".") && !entry.startsWith("/");
+      const hint = isPackage
+        ? `Install it with: npm install ${entry}`
+        : "Make sure you've built your project.";
       throw new Error(
-        `Evaluator plugin "${entry}" could not be loaded: ${msg}. Make sure you've built your project.`
+        `Evaluator plugin "${entry}" could not be loaded: ${msg}. ${hint}`
       );
     }
 

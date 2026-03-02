@@ -9,10 +9,10 @@ import { readWorkspaceConfig } from "./project.js";
 import type { Message } from "./types.js";
 import { buildTestAgentSystemPrompt } from "./prompt.js";
 import {
-  evaluateCriteria,
+  runLLMJudge,
   runEvaluators,
-  type CriteriaEvaluationResult,
-  type AggregatedEvaluationResult,
+  type LLMJudgeResult,
+  type EvaluatorResults,
   type EvaluatorDefinition,
 } from "./evaluator.js";
 import { generatePersonaMessage } from "./persona-generator.js";
@@ -66,7 +66,7 @@ interface RunContext {
   scenario: Scenario;
   persona: Persona | undefined;
   maxMessages: number;
-  hasCriteria: boolean;
+  hasLLMJudge: boolean;
   resolvedEvaluators: Array<{ definition: EvaluatorDefinition; config: Record<string, unknown> }>;
 }
 
@@ -79,8 +79,8 @@ class LoopState {
   totalOutputTokens = 0;
   threadId: string | undefined;
   lastResult: ConnectorInvokeResult | undefined;
-  lastCriteriaResult: CriteriaEvaluationResult | undefined;
-  lastEvalResult: AggregatedEvaluationResult | undefined;
+  llmJudgeResult: LLMJudgeResult | undefined;
+  evalResults: EvaluatorResults | undefined;
 
   // seenMessageIds: INPUT-side filtering only.
   // Tells buildInvokeRequest which messages have already been sent
@@ -345,7 +345,7 @@ export class RunProcessor {
     const run = runWithMessages ?? currentRun;
 
     // Resolve evaluators: always-active first, then scenario-specific
-    const hasCriteria = !!(scenario.successCriteria || scenario.failureCriteria);
+    const hasLLMJudge = !!(scenario.successCriteria || scenario.failureCriteria);
     const resolvedEvaluators: RunContext["resolvedEvaluators"] = [];
     const resolvedTypes = new Set<string>();
 
@@ -370,7 +370,7 @@ export class RunProcessor {
       }
     }
 
-    if (!hasCriteria && resolvedEvaluators.length === 0) {
+    if (!hasLLMJudge && resolvedEvaluators.length === 0) {
       throw new Error("Scenario must have success/failure criteria or evaluators defined");
     }
 
@@ -384,7 +384,7 @@ export class RunProcessor {
       scenario,
       persona,
       maxMessages: scenario.maxMessages ?? 10,
-      hasCriteria,
+      hasLLMJudge,
       resolvedEvaluators,
     };
   }
@@ -392,7 +392,7 @@ export class RunProcessor {
   // ── Evaluation loop ──────────────────────────────────────────────────────
 
   private async executeEvaluationLoop(ctx: RunContext): Promise<void> {
-    const { modules, run, connectorId, scenario, persona, maxMessages, hasCriteria, resolvedEvaluators } = ctx;
+    const { modules, run, connectorId, scenario, persona, maxMessages, hasLLMJudge, resolvedEvaluators } = ctx;
     const state = new LoopState(run.messages);
     const failureMode = scenario.failureCriteriaMode ?? "on_max_messages";
 
@@ -418,8 +418,8 @@ export class RunProcessor {
       await modules.runs.update(run.id, { messages: state.messages });
 
       // Evaluate criteria
-      if (hasCriteria) {
-        state.lastCriteriaResult = await evaluateCriteria({
+      if (hasLLMJudge) {
+        state.llmJudgeResult = await runLLMJudge({
           messages: state.messages,
           successCriteria: scenario.successCriteria,
           failureCriteria: scenario.failureCriteria,
@@ -430,11 +430,11 @@ export class RunProcessor {
 
       // Run custom evaluators
       if (resolvedEvaluators.length > 0) {
-        const criteriaWantsStop = state.lastCriteriaResult && (
-          state.lastCriteriaResult.successMet ||
-          (state.lastCriteriaResult.failureMet && failureMode === "every_turn")
+        const llmJudgeWantsStop = state.llmJudgeResult && (
+          state.llmJudgeResult.successMet ||
+          (state.llmJudgeResult.failureMet && failureMode === "every_turn")
         );
-        state.lastEvalResult = await runEvaluators(resolvedEvaluators, {
+        state.evalResults = await runEvaluators(resolvedEvaluators, {
           messages: state.messages,
           scenario: { name: scenario.name, instructions: scenario.instructions, maxMessages: scenario.maxMessages },
           persona: persona ? { name: persona.name, description: persona.description } : undefined,
@@ -444,28 +444,30 @@ export class RunProcessor {
             tokensUsage: result.tokensUsage,
           },
           turn: state.connectorCallCount,
-          isFinal: state.conversationMessageCount >= maxMessages || !!criteriaWantsStop,
+          isFinal: state.conversationMessageCount >= maxMessages || !!llmJudgeWantsStop,
         });
       }
 
       // Check stop conditions
-      const criteriaSuccess = state.lastCriteriaResult?.successMet ?? false;
-      const criteriaFailureEarly = !!(state.lastCriteriaResult?.failureMet && failureMode === "every_turn");
-      const assertionFailed = state.lastEvalResult ? !state.lastEvalResult.success : false;
+      const llmJudgeSuccess = state.llmJudgeResult?.successMet ?? false;
+      const llmJudgeFailureEarly = !!(state.llmJudgeResult?.failureMet && failureMode === "every_turn");
+      const failedAssertion = state.evalResults?.evaluatorResults.find(
+        r => r.kind === "assertion" && !r.success
+      );
 
-      if (criteriaSuccess || criteriaFailureEarly || assertionFailed) {
-        const reason = criteriaFailureEarly
-          ? `Failure criteria was triggered. ${state.lastCriteriaResult!.reasoning}`
-          : assertionFailed
-            ? `Evaluator assertion failed. ${state.lastEvalResult!.reason}`
-            : state.lastCriteriaResult?.reasoning ?? state.lastEvalResult?.reason ?? "Evaluation complete";
+      if (llmJudgeSuccess || llmJudgeFailureEarly || failedAssertion) {
+        const reason = llmJudgeFailureEarly
+          ? `Failure criteria was triggered. ${state.llmJudgeResult!.reasoning}`
+          : failedAssertion
+            ? `Evaluator assertion failed. ${failedAssertion.reason}`
+            : state.llmJudgeResult?.reasoning ?? "Evaluation complete";
 
-        const criteriaOk = !hasCriteria || criteriaSuccess;
-        const evaluatorsOk = resolvedEvaluators.length === 0 || !state.lastEvalResult || state.lastEvalResult.success;
+        const llmJudgeOk = !hasLLMJudge || llmJudgeSuccess;
+        const evaluatorsOk = !failedAssertion;
 
         await this.finalizeRun(ctx, state, {
-          success: criteriaOk && evaluatorsOk,
-          score: state.lastCriteriaResult?.confidence ?? state.lastEvalResult?.score,
+          success: llmJudgeOk && evaluatorsOk,
+          score: state.llmJudgeResult?.confidence,
           reason,
         });
         return;
@@ -479,24 +481,27 @@ export class RunProcessor {
     }
 
     // Max messages reached — determine final result
-    const failureTriggered = state.lastCriteriaResult?.failureMet ?? false;
-    const evaluatorsOk = !state.lastEvalResult || state.lastEvalResult.success;
-    const success = !hasCriteria && evaluatorsOk;
+    const failureTriggered = state.llmJudgeResult?.failureMet ?? false;
+    const finalFailedAssertion = state.evalResults?.evaluatorResults.find(
+      r => r.kind === "assertion" && !r.success
+    );
+    const evaluatorsOk = !finalFailedAssertion;
+    const success = !hasLLMJudge && evaluatorsOk;
 
     let reason: string;
     if (failureTriggered) {
-      reason = `Failure criteria was triggered. ${state.lastCriteriaResult?.reasoning || ""}`;
+      reason = `Failure criteria was triggered. ${state.llmJudgeResult?.reasoning || ""}`;
     } else if (!evaluatorsOk) {
-      reason = `Evaluator assertion failed. ${state.lastEvalResult!.reason}`;
-    } else if (hasCriteria) {
-      reason = `Max messages (${maxMessages}) reached without meeting success criteria. ${state.lastCriteriaResult?.reasoning || ""}`;
+      reason = `Evaluator assertion failed. ${finalFailedAssertion!.reason}`;
+    } else if (hasLLMJudge) {
+      reason = `Max messages (${maxMessages}) reached without meeting success criteria. ${state.llmJudgeResult?.reasoning || ""}`;
     } else {
       reason = `Completed ${maxMessages} messages. All evaluators passed.`;
     }
 
     await this.finalizeRun(ctx, state, {
       success,
-      score: state.lastCriteriaResult?.confidence ?? state.lastEvalResult?.score ?? 0,
+      score: state.llmJudgeResult?.confidence ?? 0,
       reason,
     }, true);
   }
@@ -549,19 +554,19 @@ export class RunProcessor {
       output.maxMessagesReached = true;
     }
 
-    if (state.lastCriteriaResult) {
+    if (state.llmJudgeResult) {
       output.evaluation = {
-        successMet: state.lastCriteriaResult.successMet,
-        failureMet: state.lastCriteriaResult.failureMet,
-        confidence: state.lastCriteriaResult.confidence,
-        reasoning: state.lastCriteriaResult.reasoning,
+        successMet: state.llmJudgeResult.successMet,
+        failureMet: state.llmJudgeResult.failureMet,
+        confidence: state.llmJudgeResult.confidence,
+        reasoning: state.llmJudgeResult.reasoning,
       };
     }
 
-    if (state.lastEvalResult) {
-      output.evaluatorResults = state.lastEvalResult.evaluatorResults;
-      if (Object.keys(state.lastEvalResult.metrics).length > 0) {
-        output.metrics = state.lastEvalResult.metrics;
+    if (state.evalResults) {
+      output.evaluatorResults = state.evalResults.evaluatorResults;
+      if (Object.keys(state.evalResults.metrics).length > 0) {
+        output.metrics = state.evalResults.metrics;
       }
     }
 

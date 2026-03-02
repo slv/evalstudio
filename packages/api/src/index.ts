@@ -64,8 +64,12 @@ export async function createServer(options: ServerOptions = {}) {
     logger: options.logger ?? false,
   });
 
-  // Create evaluator registry with built-in evaluators
-  const evaluatorRegistry = createEvaluatorRegistry();
+  // Create evaluator registry with built-in + custom evaluators from config
+  const evaluatorRegistry = await createEvaluatorRegistry(workspaceDir);
+  const customCount = evaluatorRegistry.list().filter(e => !e.builtin).length;
+  if (customCount > 0) {
+    console.log(`[Evaluators] Loaded ${customCount} custom evaluator(s)`);
+  }
 
   // Decorate instance with storage provider, evaluator registry, and request with projectCtx
   fastify.decorate("storage", storage);

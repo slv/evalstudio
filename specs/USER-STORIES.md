@@ -112,6 +112,7 @@
 [x] As a user, I want built-in evaluators (tool-call-count, token-usage) to run automatically on every scenario so that I always have baseline metrics without manual configuration
 [x] As a user, I want to see evaluator results in the run detail modal alongside criteria evaluation so that all evaluation data is in one place
 [x] As a developer, I want to create custom evaluators by implementing EvaluatorDefinition and registering them in the EvaluatorRegistry so that I can extend evaluation beyond built-in metrics
+[x] As a developer, I want to declare custom evaluators in `evalstudio.config.json` so that they are automatically loaded at startup without programmatic registration
 
 ### Projects
 

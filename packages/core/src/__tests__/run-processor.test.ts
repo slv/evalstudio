@@ -9,7 +9,7 @@ import type { StorageProvider } from "../storage-provider.js";
 
 // Mock the evaluator to return success on first evaluation
 vi.mock("../evaluator.js", () => ({
-  evaluateCriteria: vi.fn().mockResolvedValue({
+  runLLMJudge: vi.fn().mockResolvedValue({
     successMet: true,
     failureMet: false,
     confidence: 1.0,

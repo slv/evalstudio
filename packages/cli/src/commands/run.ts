@@ -289,7 +289,7 @@ export const runCommand = new Command("run")
             workspaceDir,
             storage,
             pollIntervalMs,
-            evaluatorRegistry: createEvaluatorRegistry(),
+            evaluatorRegistry: await createEvaluatorRegistry(workspaceDir),
             ...(maxConcurrent !== undefined ? { maxConcurrent } : {}),
             onRunStart: (run) => {
               console.log(`\x1b[36m▶\x1b[0m Starting run ${run.id}`);
@@ -422,7 +422,7 @@ export const runCommand = new Command("run")
               workspaceDir: ctx.workspaceDir,
               storage,
               maxConcurrent: 1,
-              evaluatorRegistry: createEvaluatorRegistry(),
+              evaluatorRegistry: await createEvaluatorRegistry(ctx.workspaceDir),
             });
             await processor.processOnce();
 
