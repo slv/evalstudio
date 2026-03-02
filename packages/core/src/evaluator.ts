@@ -15,6 +15,8 @@ export type JsonSchema = Record<string, unknown>;
  * Defines a custom evaluator (built-in or user-provided).
  * Evaluators can be assertions (pass/fail gates) or metrics (measurements).
  */
+export type EvaluatorChartType = "line" | "bar" | "scatter";
+
 export interface EvaluatorDefinition {
   /** Unique type identifier, e.g. "tool-call-count", "my-custom-check". */
   type: string;
@@ -28,6 +30,8 @@ export interface EvaluatorDefinition {
   auto?: boolean;
   /** JSON Schema for evaluator-specific config. Used for validation and UI form generation. */
   configSchema?: JsonSchema;
+  /** Chart type for displaying results over time on the scenario stats page. Defaults to "line". */
+  chartType?: EvaluatorChartType;
   /** Run evaluation on a conversation turn. Called after each connector invocation. */
   evaluate(ctx: EvaluatorContext): Promise<EvaluationResult>;
 }

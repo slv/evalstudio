@@ -12,6 +12,7 @@ import { EvaluatorForm } from "../components/EvaluatorForm";
 import { RunList } from "../components/RunList";
 import { ScenarioCodeSnippets } from "../components/ScenarioCodeSnippets";
 import { PerformanceChart } from "../components/PerformanceChart";
+import { EvaluatorCharts } from "../components/EvaluatorCharts";
 import { EntitySwitcher } from "../components/EntitySwitcher";
 
 type ScenarioTab = "settings" | "stats" | "code";
@@ -407,6 +408,7 @@ export function ScenarioDetailPage() {
           <>
             <h3 className="section-label">Trends</h3>
             <PerformanceChart runs={runs} />
+            <EvaluatorCharts runs={runs} />
             <h3 className="section-label">Recent Runs</h3>
             <RunList scenarioId={scenario.id} />
           </>

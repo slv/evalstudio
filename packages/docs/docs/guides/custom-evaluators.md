@@ -182,6 +182,7 @@ export default defineEvaluator({
   description?: string,   // Shown in the UI
   auto?: boolean,         // If true, runs on every scenario automatically
   configSchema?: object,  // JSON Schema for per-scenario config
+  chartType?: "line" | "bar" | "scatter",  // Chart style on scenario stats page
 
   // Required
   async evaluate(ctx: EvaluatorContext): Promise<EvaluationResult>,
@@ -270,6 +271,28 @@ On non-final turns, return `success: true` to avoid stopping the run early. The 
 Once loaded, evaluators can be added to individual scenarios via their `evaluators` array in the Web UI or API.
 
 The `config` object is validated against the evaluator's `configSchema` and passed to `evaluate()` as `ctx.config`.
+
+## Chart Visualization
+
+Evaluator results are displayed over time on the scenario Stats tab. Each evaluator gets its own chart. The `chartType` field controls which visualization is used:
+
+| Chart Type | Description | Default for |
+|------------|-------------|-------------|
+| `"bar"` | Bar chart per execution | Assertions (pass rate %) |
+| `"scatter"` | Per-run scatter dots with avg line | Metrics |
+| `"line"` | Line chart connecting execution averages | — |
+
+If `chartType` is not set, assertions default to bar and metrics default to scatter. The `token-usage` evaluator is excluded (already shown in the Trends performance chart).
+
+```typescript
+export default defineEvaluator({
+  type: "response-length",
+  label: "Response Length",
+  kind: "metric",
+  chartType: "line",  // override the default scatter chart
+  async evaluate(ctx) { /* ... */ },
+});
+```
 
 ## How Evaluators Run
 

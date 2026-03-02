@@ -113,6 +113,8 @@
 [x] As a user, I want to see evaluator results in the run detail modal alongside criteria evaluation so that all evaluation data is in one place
 [x] As a developer, I want to create custom evaluators by implementing EvaluatorDefinition and registering them in the EvaluatorRegistry so that I can extend evaluation beyond built-in metrics
 [x] As a developer, I want to declare custom evaluators in `evalstudio.config.json` so that they are automatically loaded at startup without programmatic registration
+[x] As a user, I want to see evaluator results over time as charts on the scenario Stats tab so that I can track evaluator trends across executions
+[x] As a developer, I want to set a `chartType` on my evaluator definition so that I can control how results are visualized (line, bar, or scatter)
 
 ### Projects
 

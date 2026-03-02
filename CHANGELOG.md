@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Evaluator charts on scenario stats page** — New "Evaluators" section in the scenario Stats tab with one chart per evaluator (excluding token-usage, already shown in Trends). Assertions default to green bar charts (pass rate %), metrics default to blue scatter charts (per-run values with red avg line). Chart type is configurable per evaluator via the `chartType` field on `EvaluatorDefinition` (`"line"`, `"bar"`, or `"scatter"`).
+- **`chartType` on `EvaluatorDefinition`** — New optional field allows evaluator authors to specify the preferred chart visualization. Exposed via `GET /api/evaluator-types` and read by the web UI.
+
 - **Custom evaluator plugin system** — Declare custom evaluators in `evalstudio.config.json` via the `evaluators` field (relative paths or npm packages). They are automatically loaded at startup by the API server and CLI. Use `defineEvaluator()` to author evaluator modules with assertions (pass/fail gates) or metrics (measurements).
 - **`createEvaluatorRegistry()` factory** — New async factory that creates an `EvaluatorRegistry` with built-in evaluators and loads any custom evaluators declared in workspace config. Used by the API server and CLI.
 - **Custom evaluators documentation** — New guide covering evaluator authoring, the `EvaluatorContext` API, `isFinal` pattern for final-turn-only evaluators, config-based loading, and npm package distribution.

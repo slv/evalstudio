@@ -12,6 +12,7 @@ export const toolCallCountEvaluator: EvaluatorDefinition = {
   kind: "metric",
   auto: true,
   configSchema: { type: "object", properties: {}, additionalProperties: false },
+  chartType: 'bar',
 
   async evaluate(ctx) {
     let count = 0;

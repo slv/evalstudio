@@ -33,6 +33,28 @@ function getCriteriaResult(run: Run): LLMCriteriaResult | null {
   };
 }
 
+function EvaluatorResultRow({
+  label,
+  value,
+  valueClassName,
+  reason,
+  rowClassName,
+}: {
+  label: string;
+  value: string | number;
+  valueClassName?: string;
+  reason?: string;
+  rowClassName?: string;
+}) {
+  return (
+    <div className={`evaluator-result-row ${rowClassName ?? ""}`}>
+      <span className="evaluator-result-label">{label}</span>
+      <span className={`evaluator-result-value ${valueClassName ?? ""}`}>{value}</span>
+      <span className="evaluator-result-reason">{reason}</span>
+    </div>
+  );
+}
+
 export function EvaluatorResults({ run }: EvaluatorResultsProps) {
   if (run.status !== "completed") return null;
 
@@ -117,27 +139,23 @@ export function EvaluatorResults({ run }: EvaluatorResultsProps) {
           <div className="evaluator-results-divider" />
           <div className="evaluator-results-table">
             {assertions.map((r) => (
-              <div key={r.type} className={`evaluator-result-row ${r.success ? "passed" : "failed"}`}>
-                <span className="evaluator-result-label">{r.label}</span>
-                <span className={`evaluator-result-status ${r.success ? "passed" : "failed"}`}>
-                  {r.success ? "Pass" : "Fail"}
-                </span>
-                {r.value !== undefined && (
-                  <span className="evaluator-result-score">
-                    {Math.round(r.value * 100)}%
-                  </span>
-                )}
-                <span className="evaluator-result-reason">{r.reason}</span>
-              </div>
+              <EvaluatorResultRow
+                key={r.type}
+                label={r.label}
+                value={r.success ? "Pass" : "Fail"}
+                valueClassName={r.success ? "passed" : "failed"}
+                reason={r.reason}
+                rowClassName={r.success ? "passed" : "failed"}
+              />
             ))}
             {metricResults.map((r) => (
-              <div key={r.type} className="evaluator-result-row metric">
-                <span className="evaluator-result-label">{r.label}</span>
-                <span className="evaluator-result-value">
-                  {metrics?.[r.type] ?? r.value ?? "—"}
-                </span>
-                <span className="evaluator-result-reason">{r.reason}</span>
-              </div>
+              <EvaluatorResultRow
+                key={r.type}
+                label={r.label}
+                value={metrics?.[r.type] ?? r.value ?? "—"}
+                reason={r.reason}
+                rowClassName="metric"
+              />
             ))}
           </div>
         </>

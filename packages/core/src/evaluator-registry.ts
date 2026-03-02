@@ -34,6 +34,7 @@ export class EvaluatorRegistry {
     configSchema?: Record<string, unknown>;
     builtin: boolean;
     auto: boolean;
+    chartType?: "line" | "bar" | "scatter";
   }> {
     return Array.from(this.evaluators.values()).map(({ definition, builtin }) => ({
       type: definition.type,
@@ -43,6 +44,7 @@ export class EvaluatorRegistry {
       configSchema: definition.configSchema,
       builtin,
       auto: !!definition.auto,
+      chartType: definition.chartType,
     }));
   }
 }

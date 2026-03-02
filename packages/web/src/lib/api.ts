@@ -78,6 +78,8 @@ export interface UpdatePersonaInput {
 
 export type FailureCriteriaMode = "every_turn" | "on_max_messages";
 
+export type EvaluatorChartType = "line" | "bar" | "scatter";
+
 /** Reference to an evaluator on a scenario. */
 export interface ScenarioEvaluator {
   type: string;
@@ -93,6 +95,7 @@ export interface EvaluatorTypeInfo {
   configSchema?: Record<string, unknown>;
   builtin: boolean;
   auto: boolean;
+  chartType?: EvaluatorChartType;
 }
 
 /** Single evaluator result stored on a run's output. */
