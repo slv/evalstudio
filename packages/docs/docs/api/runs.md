@@ -15,6 +15,7 @@ REST API endpoints for managing evaluation runs. Runs track the execution of eva
 | POST | `/api/projects/:projectId/runs` | Create runs for an eval |
 | POST | `/api/projects/:projectId/runs/playground` | Create a playground run (without eval) |
 | POST | `/api/projects/:projectId/runs/chat` | Create a chat run (live chat session) |
+| POST | `/api/projects/:projectId/runs/:id/chat` | Send a message in a chat run |
 | PUT | `/api/projects/:projectId/runs/:id` | Update a run |
 | POST | `/api/projects/:projectId/runs/:id/retry` | Retry a run with system errors |
 | DELETE | `/api/projects/:projectId/runs/:id` | Delete a run |
@@ -273,6 +274,71 @@ Content-Type: application/json
 |--------|-------------|
 | 400 | Connector ID is required |
 | 404 | Connector not found |
+
+## Send Chat Message
+
+Send a user message in a chat run. The server invokes the connector, appends the user message and assistant response to the run, and persists the updated state. This is the primary endpoint for the Agents page live chat.
+
+```http
+POST /api/projects/:projectId/runs/:id/chat
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "content": "Hello, I need help with my booking"
+}
+```
+
+### Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `content` | string | Yes | The user message text |
+
+### Response
+
+**Status Code:** 200 OK
+
+```json
+{
+  "run": {
+    "id": "run-uuid",
+    "connectorId": "connector-uuid",
+    "status": "chat",
+    "messages": [
+      { "role": "user", "content": "Hello, I need help with my booking" },
+      { "role": "assistant", "content": "I'd be happy to help! What's your booking number?" }
+    ],
+    "threadId": "thread-uuid",
+    "startedAt": "2026-02-26T10:00:00.000Z",
+    "createdAt": "2026-02-26T10:00:00.000Z",
+    "updatedAt": "2026-02-26T10:01:00.000Z"
+  },
+  "messages": [
+    { "role": "assistant", "content": "I'd be happy to help! What's your booking number?" }
+  ],
+  "latencyMs": 523
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run` | object | The full updated run with all messages |
+| `messages` | array | Only the new response messages from this turn |
+| `latencyMs` | number | Response time in milliseconds |
+| `error` | string | Error message if the connector invoke failed |
+
+### Error Responses
+
+| Status | Description |
+|--------|-------------|
+| 400 | Message content is required / Run is not a chat run |
+| 404 | Run not found |
 
 ## Update Run
 

@@ -57,6 +57,17 @@ export interface CreateChatRunInput {
   connectorId: string;
 }
 
+export interface ChatMessageInput {
+  content: string;
+}
+
+export interface ChatMessageResult {
+  run: Run;
+  messages: Message[];
+  latencyMs: number;
+  error?: string;
+}
+
 export interface UpdateRunInput {
   status?: RunStatus;
   startedAt?: string;
@@ -217,6 +228,48 @@ export function createRunModule(repo: Repository<Run>, deps: RunModuleDeps) {
 
       await repo.save(run);
       return run;
+    },
+
+    async sendChatMessage(id: string, input: ChatMessageInput): Promise<ChatMessageResult> {
+      const run = await repo.findById(id);
+      if (!run) {
+        throw new Error(`Run with id "${id}" not found`);
+      }
+      if (run.status !== "chat") {
+        throw new Error(`Run "${id}" is not a chat run (status: ${run.status})`);
+      }
+      if (!run.connectorId) {
+        throw new Error(`Run "${id}" has no connector configured`);
+      }
+
+      const userMessage: Message = { role: "user", content: input.content };
+      const allMessages = [...run.messages, userMessage];
+
+      const invokeResult = await connectors.invoke(run.connectorId, {
+        messages: allMessages,
+        runId: run.id,
+      });
+
+      const responseMessages = invokeResult.messages?.filter(
+        (m) => m.role === "assistant" || m.role === "tool"
+      ) ?? [];
+
+      const updatedMessages = [...allMessages, ...responseMessages];
+      const updated: Run = {
+        ...run,
+        messages: updatedMessages,
+        threadId: invokeResult.threadId ?? run.threadId,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await repo.save(updated);
+
+      return {
+        run: updated,
+        messages: responseMessages,
+        latencyMs: invokeResult.latencyMs,
+        error: invokeResult.success ? undefined : invokeResult.error,
+      };
     },
 
     async get(id: string): Promise<Run | undefined> {

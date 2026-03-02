@@ -183,6 +183,35 @@ export async function runsRoute(fastify: FastifyInstance) {
     }
   );
 
+  // Send a chat message (invoke connector + persist to run)
+  fastify.post<{ Params: RunParams; Body: { content: string } }>(
+    "/runs/:id/chat",
+    async (request, reply) => {
+      const { content } = request.body;
+
+      if (!content || typeof content !== "string" || !content.trim()) {
+        reply.code(400);
+        return { error: "Message content is required" };
+      }
+
+      try {
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const result = await runs.sendChatMessage(request.params.id, { content: content.trim() });
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message.includes("not found")) {
+            reply.code(404);
+          } else {
+            reply.code(400);
+          }
+          return { error: error.message };
+        }
+        throw error;
+      }
+    }
+  );
+
   fastify.put<{ Params: RunParams; Body: UpdateRunBody }>(
     "/runs/:id",
     async (request, reply) => {

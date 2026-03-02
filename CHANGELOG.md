@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Agents page with live chat** — Connectors are rebranded as "Agents" in the UI. New dedicated Agents page (`/projects/:id/agents/:agentId`) with entity switcher navigation, a Live Chat tab for real-time conversations with agents (messages recorded as runs with new `chat` status), chat history sidebar to resume previous conversations, and an inline Settings tab for editing all agent configuration fields. Online/offline status indicator polls the connector test endpoint.
 - **`chat` run status** — New `RunStatus` value `"chat"` for live chat sessions, separate from automated eval runs. Chat runs are filtered out of the RunList and subject to the orphan runs cap.
 - **Chat runs API** — `POST /api/runs/chat` creates a chat run for a connector. `GET /api/runs` supports `status` and `connectorId` query parameters for filtering.
+- **Server-managed chat messages** — New `POST /api/runs/:id/chat` endpoint handles the full chat message flow server-side: accepts user message text, invokes the connector, appends messages, persists state, and returns the updated run. Replaces the previous client-managed flow of `POST /connectors/:id/invoke` + `PUT /runs/:id`.
 - **CLI run command documentation** — Added `docs/cli/run.md` covering all 6 subcommands: `create`, `list`, `show`, `delete`, `process`, and `playground`
 
 ### Changed
@@ -20,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ConnectorForm simplified** — The create modal now shows only mandatory fields (name, type, base URL, assistant ID). Optional fields (headers, configurable JSON) are edited via the agent's Settings tab.
 - **ToolCall type aligned** — Web `ToolCall` interface now matches the core OpenAI-format type (`{id, type: "function", function: {name, arguments}}`) instead of the previous flat format.
 - **Scenario Run button** — Renamed "Playground" to "Run" and changed from green to blue to match the Evals page.
+
+### Removed
+
+- **Connector invoke API** — Removed `POST /api/connectors/:id/invoke` endpoint. Chat messages now go through `POST /api/runs/:id/chat` which handles invoke + persistence in a single request.
+- **Client-side chat orchestration** — Removed `useInvokeConnector` hook, `useUpdateRun` hook, and related web API methods (`api.connectors.invoke`, `api.runs.update`). The AgentChat component now uses a single `useSendChatMessage` hook.
 
 ### Fixed
 

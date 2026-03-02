@@ -324,20 +324,6 @@ export interface ConnectorTestResult {
   error?: string;
 }
 
-export interface ConnectorInvokeInput {
-  messages: Message[];
-}
-
-export interface ConnectorInvokeResult {
-  success: boolean;
-  latencyMs: number;
-  messages?: Message[];
-  rawResponse?: string;
-  error?: string;
-  tokensUsage?: TokensUsage;
-  threadId?: string;
-}
-
 export interface TokensUsage {
   input_tokens: number;
   output_tokens: number;
@@ -363,6 +349,13 @@ export interface RunResult {
 
 export interface CreateChatRunInput {
   connectorId: string;
+}
+
+export interface ChatMessageResult {
+  run: Run;
+  messages: Message[];
+  latencyMs: number;
+  error?: string;
 }
 
 export interface Run {
@@ -396,18 +389,6 @@ export interface CreatePlaygroundRunInput {
   scenarioId: string;
   connectorId: string;
   personaId?: string;
-}
-
-export interface UpdateRunInput {
-  status?: RunStatus;
-  startedAt?: string;
-  completedAt?: string;
-  latencyMs?: number;
-  threadId?: string;
-  messages?: Message[];
-  output?: Record<string, unknown>;
-  result?: RunResult;
-  error?: string;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -700,15 +681,6 @@ export const api = {
       });
       return handleResponse(response);
     },
-
-    invoke: async (projectId: string, id: string, input: ConnectorInvokeInput): Promise<ConnectorInvokeResult> => {
-      const response = await fetch(`${projectBase(projectId)}/connectors/${id}/invoke`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      return handleResponse(response);
-    },
   },
 
   runs: {
@@ -758,11 +730,11 @@ export const api = {
       return handleResponse(response);
     },
 
-    update: async (projectId: string, id: string, input: UpdateRunInput): Promise<Run> => {
-      const response = await fetch(`${projectBase(projectId)}/runs/${id}`, {
-        method: "PUT",
+    sendChatMessage: async (projectId: string, runId: string, content: string): Promise<ChatMessageResult> => {
+      const response = await fetch(`${projectBase(projectId)}/runs/${runId}/chat`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify({ content }),
       });
       return handleResponse(response);
     },

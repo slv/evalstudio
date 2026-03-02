@@ -22,6 +22,8 @@ import {
   type CreateRunInput,
   type CreatePlaygroundRunInput,
   type CreateChatRunInput,
+  type ChatMessageInput,
+  type ChatMessageResult,
   type UpdateRunInput,
   type ListRunsOptions,
   type RunProcessorOptions,
@@ -127,6 +129,25 @@ interface CreateChatRunInput {
 ```
 
 Used for creating live chat runs from the Agents page. Chat runs have `status: "chat"` and are not processed by RunProcessor.
+
+### ChatMessageInput
+
+```typescript
+interface ChatMessageInput {
+  content: string;               // The user message text
+}
+```
+
+### ChatMessageResult
+
+```typescript
+interface ChatMessageResult {
+  run: Run;                      // The full updated run with all messages
+  messages: Message[];           // Only the new response messages from this turn
+  latencyMs: number;             // Response time in milliseconds
+  error?: string;                // Error message if the connector invoke failed
+}
+```
 
 ### UpdateRunInput
 
@@ -252,6 +273,26 @@ const run = await modules.runs.createChatRun({
 ```
 
 Chat runs are not processed by `RunProcessor`. They are managed interactively through the Agents page live chat interface.
+
+### modules.runs.sendChatMessage()
+
+Sends a user message in a chat run. The server invokes the connector, appends the user message and assistant response to the run, and persists the updated state.
+
+```typescript
+async function sendChatMessage(id: string, input: ChatMessageInput): Promise<ChatMessageResult>;
+```
+
+**Throws**: Error if the run doesn't exist, is not a chat run, or has no connector configured.
+
+```typescript
+const result = await modules.runs.sendChatMessage(run.id, {
+  content: "Hello, I need help with my booking",
+});
+// result.run — full updated run with all messages
+// result.messages — only the new assistant/tool response messages
+// result.latencyMs — connector response time
+// result.error — error message if invoke failed (run is still updated)
+```
 
 ### modules.runs.get()
 

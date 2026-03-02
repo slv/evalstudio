@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Connector, Message, Run } from "../lib/api";
-import { useInvokeConnector } from "../hooks/useConnectors";
-import { useCreateChatRun, useChatRunsByConnector, useUpdateRun } from "../hooks/useRuns";
+import { useCreateChatRun, useChatRunsByConnector, useSendChatMessage } from "../hooks/useRuns";
 import { MessagesDisplay, SimulatedMessage, SimulationError } from "./MessagesDisplay";
 
 interface AgentChatProps {
@@ -47,15 +46,14 @@ export function AgentChat({ connector }: AgentChatProps) {
   const [threadId, setThreadId] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
 
-  const invokeConnector = useInvokeConnector();
   const createChatRun = useCreateChatRun();
-  const updateRun = useUpdateRun();
+  const sendChatMessage = useSendChatMessage();
   const { data: chatRuns = [], refetch: refetchChatRuns } = useChatRunsByConnector(connector.id);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const isSending = invokeConnector.isPending;
+  const isSending = sendChatMessage.isPending;
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -89,9 +87,9 @@ export function AgentChat({ connector }: AgentChatProps) {
       inputRef.current.focus();
     }
 
+    // Optimistically add user message
     const userMessage: Message = { role: "user", content: text };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    setMessages((prev) => [...prev, userMessage]);
 
     try {
       // Create a chat run on first message
@@ -102,39 +100,24 @@ export function AgentChat({ connector }: AgentChatProps) {
         setRunId(run.id);
       }
 
-      const result = await invokeConnector.mutateAsync({
-        id: connector.id,
-        messages: updatedMessages,
+      const result = await sendChatMessage.mutateAsync({
+        runId: currentRunId,
+        content: text,
       });
 
-      if (result.success && result.messages) {
-        const newMessages = result.messages.filter(
-          (m) => m.role === "assistant" || m.role === "tool"
-        );
-        const allMessages = [...updatedMessages, ...newMessages];
-        setMessages(allMessages);
+      // Server is source of truth for messages
+      setMessages(result.run.messages);
+      setThreadId(result.run.threadId);
 
-        if (result.threadId) {
-          setThreadId(result.threadId);
-        }
-
-        // Persist messages to the run
-        await updateRun.mutateAsync({
-          id: currentRunId,
-          input: {
-            messages: allMessages,
-            threadId: result.threadId || threadId,
-          },
-        });
-
-        refetchChatRuns();
-      } else if (result.error) {
+      if (result.error) {
         setError(result.error);
       }
+
+      refetchChatRuns();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message");
     }
-  }, [input, messages, isSending, runId, connector.id, threadId, invokeConnector, createChatRun, updateRun, refetchChatRuns]);
+  }, [input, isSending, runId, connector.id, createChatRun, sendChatMessage, refetchChatRuns]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

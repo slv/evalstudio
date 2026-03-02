@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, CreateChatRunInput, CreatePlaygroundRunInput, CreateRunInput, Run, UpdateRunInput } from "../lib/api";
+import { api, ChatMessageResult, CreateChatRunInput, CreatePlaygroundRunInput, CreateRunInput, Run } from "../lib/api";
 import { useProjectId } from "./useProjectId";
 
 export function useRuns(evalId?: string) {
@@ -131,18 +131,20 @@ export function useCreateChatRun() {
   });
 }
 
-export function useUpdateRun() {
+export function useSendChatMessage() {
   const projectId = useProjectId();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateRunInput }) =>
-      api.runs.update(projectId, id, input),
-    onSuccess: (run) => {
+    mutationFn: ({ runId, content }: { runId: string; content: string }) =>
+      api.runs.sendChatMessage(projectId, runId, content),
+    onSuccess: (result: ChatMessageResult) => {
       queryClient.invalidateQueries({ queryKey: ["runs", projectId] });
-      queryClient.invalidateQueries({
-        queryKey: ["runs", projectId, "detail", run.id],
-      });
+      if (result.run.connectorId) {
+        queryClient.invalidateQueries({
+          queryKey: ["runs", projectId, "byConnector", result.run.connectorId],
+        });
+      }
     },
   });
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, CreateConnectorInput, UpdateConnectorInput, Message } from "../lib/api";
+import { api, CreateConnectorInput, UpdateConnectorInput } from "../lib/api";
 import { useProjectId } from "./useProjectId";
 
 export function useConnectors() {
@@ -86,14 +86,5 @@ export function useConnectorStatus(id: string | null) {
     refetchInterval: 30_000,
     retry: false,
     staleTime: 15_000,
-  });
-}
-
-export function useInvokeConnector() {
-  const projectId = useProjectId();
-
-  return useMutation({
-    mutationFn: ({ id, messages }: { id: string; messages: Message[] }) =>
-      api.connectors.invoke(projectId, id, { messages }),
   });
 }

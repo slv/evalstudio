@@ -4,7 +4,6 @@ import {
   getConnectorTypes,
   type ConnectorConfig,
   type ConnectorType,
-  type Message,
 } from "@evalstudio/core";
 
 interface CreateConnectorBody {
@@ -145,26 +144,6 @@ export async function connectorsRoute(fastify: FastifyInstance) {
     async (request) => {
       const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
       const result = await connectors.test(request.params.id);
-      return result;
-    }
-  );
-
-  interface InvokeConnectorBody {
-    messages: Message[];
-  }
-
-  fastify.post<{ Params: ConnectorParams; Body: InvokeConnectorBody }>(
-    "/connectors/:id/invoke",
-    async (request, reply) => {
-      const { messages } = request.body;
-
-      if (!messages || !Array.isArray(messages) || messages.length === 0) {
-        reply.code(400);
-        return { error: "Messages array is required" };
-      }
-
-      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
-      const result = await connectors.invoke(request.params.id, { messages });
       return result;
     }
   );

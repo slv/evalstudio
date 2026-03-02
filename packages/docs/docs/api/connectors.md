@@ -17,7 +17,6 @@ REST endpoints for managing connector configurations. Connectors define how to c
 | PUT | `/api/projects/:projectId/connectors/:id` | Update a connector |
 | DELETE | `/api/projects/:projectId/connectors/:id` | Delete a connector |
 | POST | `/api/projects/:projectId/connectors/:id/test` | Test connector connectivity |
-| POST | `/api/projects/:projectId/connectors/:id/invoke` | Invoke connector with messages |
 
 ---
 
@@ -307,76 +306,3 @@ Test a connector's connectivity by sending a "hello" message and checking the re
 curl -X POST http://localhost:3000/api/projects/PROJECT_ID/connectors/987fcdeb-51a2-3bc4-d567-890123456789/test
 ```
 
----
-
-## POST /api/projects/:projectId/connectors/:id/invoke
-
-Invoke a connector by sending messages and receiving the assistant's response. This is used to send a conversation to an agent and get a response back.
-
-### Request Body
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `messages` | array | Yes | Array of message objects with `role` and `content` |
-
-```json
-{
-  "messages": [
-    { "role": "user", "content": "Hello, I need help with my order" },
-    { "role": "assistant", "content": "I'd be happy to help! What's your order number?" },
-    { "role": "user", "content": "It's #12345" }
-  ]
-}
-```
-
-### Response (200 OK)
-
-```json
-{
-  "success": true,
-  "latencyMs": 523,
-  "messages": [
-    {
-      "role": "assistant",
-      "content": "I found order #12345. How can I assist you with it?"
-    }
-  ],
-  "tokensUsage": { "input": 50, "output": 30 },
-  "threadId": "thread-uuid"
-}
-```
-
-### Response (200 OK - Invoke Failed)
-
-```json
-{
-  "success": false,
-  "latencyMs": 145,
-  "rawResponse": "{\"error\": \"invalid_request\"}",
-  "error": "HTTP 400: invalid_request"
-}
-```
-
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `success` | boolean | Whether the invoke succeeded |
-| `latencyMs` | number | Response time in milliseconds |
-| `messages` | array | Response messages from the agent (on success) |
-| `rawResponse` | string | Raw response body for debugging |
-| `error` | string | Error message (on failure) |
-| `tokensUsage` | object | Token usage metadata (input/output counts) |
-| `threadId` | string | Thread ID (LangGraph) |
-
-### Example
-
-```bash
-curl -X POST http://localhost:3000/api/projects/PROJECT_ID/connectors/987fcdeb-51a2-3bc4-d567-890123456789/invoke \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      { "role": "user", "content": "What is the weather like?" }
-    ]
-  }'
-```
