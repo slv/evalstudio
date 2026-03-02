@@ -10,6 +10,16 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Guides",
+      items: ["guides/langgraph-setup"],
+    },
+    {
+      type: "html",
+      value: "<hr />",
+      defaultStyle: true,
+    },
+    {
+      type: "category",
       label: "Core Library",
       items: [
         "core/status",

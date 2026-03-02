@@ -54,6 +54,11 @@ const config: Config = {
           label: "Docs",
         },
         {
+          to: "/guides/langgraph-setup",
+          position: "left",
+          label: "Guides",
+        },
+        {
           href: "https://github.com/Treatwell-AI/evalstudio",
           label: "GitHub",
           position: "right",

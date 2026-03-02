@@ -11,7 +11,7 @@ EvalStudio is a flexible evaluation platform for testing chatbots, AI agents, an
 
 - **Multi-turn conversation testing** - Define personas, scenarios, and seed messages to simulate realistic interactions
 - **Multiple interfaces** - CLI for developers/CI, Web UI for teams, REST API for automation
-- **Connectors** - Test LangGraph agents via configurable endpoints
+- **Connectors** - Test [LangGraph agents](/guides/langgraph-setup) via configurable endpoints
 - **LLM-as-judge evaluation** - Evaluate agent responses against success and failure criteria using LLM
 - **Concurrent execution** - Run evaluations in parallel with configurable concurrency
 - **Git-friendly** - Tests stored as JSON files, works seamlessly with version control

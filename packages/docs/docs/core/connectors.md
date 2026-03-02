@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Connectors
 
-Manage connector configurations for bridging EvalStudio to external API endpoints. Connectors define how to connect to target systems like LangGraph Dev API.
+Manage connector configurations for bridging EvalStudio to external API endpoints. Connectors define how to connect to target systems like [LangGraph](/guides/langgraph-setup) Dev API.
 
 ## Import
 
