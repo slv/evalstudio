@@ -274,18 +274,10 @@ export interface DefaultModels {
   anthropic: ModelGroup[];
 }
 
-export type ConnectorType = "langgraph";
+export type ConnectorType = string;
 
-/** Configuration for LangGraph Dev API connectors */
-export interface LangGraphConnectorConfig {
-  /** The assistant ID to use when invoking the LangGraph agent (required) */
-  assistantId: string;
-  /** Configurable values passed in config.configurable of invoke requests */
-  configurable?: Record<string, unknown>;
-}
-
-/** Union type for connector configurations */
-export type ConnectorConfig = LangGraphConnectorConfig;
+/** Generic connector config — shape depends on connector type's configSchema */
+export type ConnectorConfig = Record<string, unknown>;
 
 export interface Connector {
   id: string;
@@ -315,9 +307,20 @@ export interface UpdateConnectorInput {
   config?: ConnectorConfig;
 }
 
-export interface ConnectorTypes {
-  http: string;
-  langgraph: string;
+/** Describes a registered connector type from the registry */
+export interface ConnectorTypeInfo {
+  type: string;
+  label: string;
+  description?: string;
+  configSchema?: JsonSchema;
+  builtin: boolean;
+}
+
+export interface JsonSchema {
+  type?: string;
+  properties?: Record<string, JsonSchema & { description?: string }>;
+  required?: string[];
+  [key: string]: unknown;
 }
 
 export interface ConnectorTestResult {
@@ -648,7 +651,7 @@ export const api = {
       return handleResponse(response);
     },
 
-    getTypes: async (projectId: string): Promise<ConnectorTypes> => {
+    getTypes: async (projectId: string): Promise<ConnectorTypeInfo[]> => {
       const response = await fetch(`${projectBase(projectId)}/connectors/types`);
       return handleResponse(response);
     },

@@ -6,13 +6,15 @@ import {
   useUpdateConnector,
   useDeleteConnector,
   useConnectorStatus,
+  useConnectorTypes,
 } from "../hooks/useConnectors";
 import { useLastVisited } from "../hooks/useLastVisited";
 import { EntitySwitcher } from "../components/EntitySwitcher";
 import { ConnectorForm } from "../components/ConnectorForm";
 import { AgentChat } from "../components/AgentChat";
 import { HeadersEditor } from "../components/HeadersEditor";
-import type { ConnectorType, LangGraphConnectorConfig } from "../lib/api";
+import { ConnectorConfigFields, validateConfigFields, buildConfigFromValues } from "../components/ConnectorConfigFields";
+import type { ConnectorType } from "../lib/api";
 
 type AgentTab = "chat" | "settings";
 
@@ -21,6 +23,7 @@ export function AgentDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
   const { data: connector, isLoading, error } = useConnector(agentId ?? null);
   const { data: allConnectors = [] } = useConnectors();
+  const { data: connectorTypes = [] } = useConnectorTypes();
   const lastVisited = useLastVisited("agent");
   const updateConnector = useUpdateConnector();
   const deleteConnector = useDeleteConnector();
@@ -33,13 +36,14 @@ export function AgentDetailPage() {
 
   // Form state
   const [name, setName] = useState("");
-  const [type, setType] = useState<ConnectorType>("langgraph");
+  const [type, setType] = useState<ConnectorType>("");
   const [baseUrl, setBaseUrl] = useState("");
-  const [assistantId, setAssistantId] = useState("");
-  const [configurableJson, setConfigurableJson] = useState("");
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
   const [customHeaders, setCustomHeaders] = useState<Array<{ key: string; value: string }>>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const selectedTypeDef = connectorTypes.find((t) => t.type === type);
 
   const setActiveTab = (tab: AgentTab) => {
     setActiveTabState(tab);
@@ -66,15 +70,16 @@ export function AgentDetailPage() {
         setCustomHeaders([]);
       }
 
-      if (connector.type === "langgraph" && connector.config) {
-        const lgConfig = connector.config as LangGraphConnectorConfig;
-        setAssistantId(lgConfig.assistantId || "");
-        if (lgConfig.configurable && Object.keys(lgConfig.configurable).length > 0) {
-          setConfigurableJson(JSON.stringify(lgConfig.configurable, null, 2));
-        } else {
-          setConfigurableJson("");
+      // Load config values as strings for form fields
+      const values: Record<string, string> = {};
+      if (connector.config) {
+        for (const [key, val] of Object.entries(connector.config)) {
+          if (val !== undefined && val !== null) {
+            values[key] = typeof val === "object" ? JSON.stringify(val, null, 2) : String(val);
+          }
         }
       }
+      setConfigValues(values);
 
       setHasChanges(false);
     }
@@ -130,8 +135,10 @@ export function AgentDetailPage() {
       setSaveError("Base URL is required");
       return;
     }
-    if (!assistantId.trim()) {
-      setSaveError("Assistant ID is required");
+
+    const validationError = validateConfigFields(selectedTypeDef, configValues);
+    if (validationError) {
+      setSaveError(validationError);
       return;
     }
 
@@ -142,25 +149,22 @@ export function AgentDetailPage() {
         ? Object.fromEntries(headersWithValues.map((h) => [h.key.trim(), h.value]))
         : undefined;
 
-    // Build config
-    let config: LangGraphConnectorConfig | undefined;
-    if (type === "langgraph") {
-      config = { assistantId: assistantId.trim() };
-      if (configurableJson.trim()) {
-        try {
-          const configurable = JSON.parse(configurableJson);
-          config = { ...config, configurable };
-        } catch {
-          setSaveError("Invalid JSON in configurable");
-          return;
-        }
-      }
+    const { config, error: buildError } = buildConfigFromValues(selectedTypeDef, configValues);
+    if (buildError) {
+      setSaveError(buildError);
+      return;
     }
 
     try {
       await updateConnector.mutateAsync({
         id: connector.id,
-        input: { name, type, baseUrl, headers, config },
+        input: {
+          name,
+          type,
+          baseUrl,
+          headers,
+          config: Object.keys(config).length > 0 ? config : undefined,
+        },
       });
       setHasChanges(false);
     } catch (err) {
@@ -181,18 +185,15 @@ export function AgentDetailPage() {
       setCustomHeaders([]);
     }
 
-    if (connector.type === "langgraph" && connector.config) {
-      const lgConfig = connector.config as LangGraphConnectorConfig;
-      setAssistantId(lgConfig.assistantId || "");
-      if (lgConfig.configurable && Object.keys(lgConfig.configurable).length > 0) {
-        setConfigurableJson(JSON.stringify(lgConfig.configurable, null, 2));
-      } else {
-        setConfigurableJson("");
+    const values: Record<string, string> = {};
+    if (connector.config) {
+      for (const [key, val] of Object.entries(connector.config)) {
+        if (val !== undefined && val !== null) {
+          values[key] = typeof val === "object" ? JSON.stringify(val, null, 2) : String(val);
+        }
       }
-    } else {
-      setAssistantId("");
-      setConfigurableJson("");
     }
+    setConfigValues(values);
 
     setSaveError(null);
     setHasChanges(false);
@@ -298,7 +299,7 @@ export function AgentDetailPage() {
                     id="agent-name"
                     value={name}
                     onChange={(e) => handleChange(setName)(e.target.value)}
-                    placeholder="My LangGraph Agent"
+                    placeholder="My Agent"
                   />
                 </div>
 
@@ -307,9 +308,16 @@ export function AgentDetailPage() {
                   <select
                     id="agent-type"
                     value={type}
-                    onChange={(e) => handleChange(setType)(e.target.value as ConnectorType)}
+                    onChange={(e) => {
+                      handleChange(setType)(e.target.value as ConnectorType);
+                      setConfigValues({});
+                    }}
                   >
-                    <option value="langgraph">LangGraph (LangGraph Dev API)</option>
+                    {connectorTypes.map((t) => (
+                      <option key={t.type} value={t.type}>
+                        {t.label}{t.description ? ` (${t.description})` : ""}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -322,34 +330,16 @@ export function AgentDetailPage() {
                     onChange={(e) => handleChange(setBaseUrl)(e.target.value)}
                     placeholder="http://localhost:8123"
                   />
-                  <span className="form-hint">The URL of your LangGraph Dev API server</span>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="agent-assistant-id">Assistant ID</label>
-                  <input
-                    type="text"
-                    id="agent-assistant-id"
-                    value={assistantId}
-                    onChange={(e) => handleChange(setAssistantId)(e.target.value)}
-                    placeholder="my-assistant"
-                  />
-                  <span className="form-hint">The assistant ID to use when invoking the LangGraph agent</span>
                 </div>
               </div>
 
               <div className="dashboard-card">
-                <div className="form-group">
-                  <label htmlFor="agent-configurable">Configurable (JSON)</label>
-                  <textarea
-                    id="agent-configurable"
-                    value={configurableJson}
-                    onChange={(e) => handleChange(setConfigurableJson)(e.target.value)}
-                    placeholder={`{\n  "key": "value"\n}`}
-                    rows={3}
-                  />
-                  <span className="form-hint">Optional values sent as config.configurable in invoke requests</span>
-                </div>
+                <ConnectorConfigFields
+                  typeDef={selectedTypeDef}
+                  values={configValues}
+                  onChange={handleChange(setConfigValues)}
+                  idPrefix="agent-config"
+                />
 
                 <HeadersEditor
                   headers={customHeaders}
