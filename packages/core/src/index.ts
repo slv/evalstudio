@@ -77,7 +77,6 @@ export {
 } from "./llm-provider.js";
 export {
   createConnectorModule,
-  getConnectorTypes,
   type ConnectorModule,
   type Connector,
   type ConnectorConfig,
@@ -89,6 +88,17 @@ export {
   type LangGraphConnectorConfig,
   type UpdateConnectorInput,
 } from "./connector.js";
+export {
+  ConnectorRegistry,
+  createConnectorRegistry,
+  defineConnector,
+  type ConnectorDefinition,
+} from "./connector-registry.js";
+export type {
+  ConnectorStrategy,
+  ConnectorRequestConfig,
+  ConnectorResponseMetadata,
+} from "./connectors/index.js";
 export {
   createRunModule,
   type RunModule,

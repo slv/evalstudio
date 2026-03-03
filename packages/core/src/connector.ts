@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { Repository } from "./repository.js";
 import type { Message, TokensUsage } from "./types.js";
-import type { ConnectorStrategy } from "./connectors/index.js";
-import { langGraphStrategy } from "./connectors/index.js";
+import type { ConnectorRegistry } from "./connector-registry.js";
 
-export type ConnectorType = "langgraph";
+export type ConnectorType = string;
 
 export interface LangGraphConnectorConfig {
   assistantId: string;
@@ -69,38 +68,6 @@ export interface ConnectorInvokeResult {
 }
 
 /**
- * Returns the supported connector types with their descriptions
- */
-export function getConnectorTypes(): Record<ConnectorType, string> {
-  return {
-    langgraph: "LangGraph Dev API connector for langgraph-backed agents",
-  };
-}
-
-// ============================================================================
-// Connector Strategy Registry
-// ============================================================================
-
-/**
- * Registry of connector strategies
- * Each connector type has its own strategy implementation in the connectors/ folder
- */
-const connectorStrategies: Record<ConnectorType, ConnectorStrategy> = {
-  langgraph: langGraphStrategy,
-};
-
-/**
- * Get the strategy for a given connector type
- */
-function getStrategy(type: ConnectorType): ConnectorStrategy {
-  const strategy = connectorStrategies[type];
-  if (!strategy) {
-    throw new Error(`Unknown connector type: ${type}`);
-  }
-  return strategy;
-}
-
-/**
  * Helper to measure execution time of async operations
  */
 async function withTiming<T>(
@@ -115,7 +82,7 @@ async function withTiming<T>(
 // Factory: project-scoped connector module
 // ============================================================================
 
-export function createConnectorModule(repo: Repository<Connector>) {
+export function createConnectorModule(repo: Repository<Connector>, registry: ConnectorRegistry) {
   return {
     async create(input: CreateConnectorInput): Promise<Connector> {
       const duplicates = await repo.findBy({ name: input.name });
@@ -187,7 +154,7 @@ export function createConnectorModule(repo: Repository<Connector>) {
         return { success: false, latencyMs: 0, error: `Connector with id "${id}" not found` };
       }
 
-      const strategy = getStrategy(connector.type);
+      const strategy = registry.getStrategy(connector.type);
       const requestConfig = strategy.buildTestRequest(connector);
 
       try {
@@ -232,7 +199,7 @@ export function createConnectorModule(repo: Repository<Connector>) {
         return { success: false, latencyMs: 0, error: "No messages provided" };
       }
 
-      const strategy = getStrategy(connector.type);
+      const strategy = registry.getStrategy(connector.type);
       const requestConfig = strategy.buildInvokeRequest(connector, input);
 
       // Build set of seen message IDs (messages we already have)

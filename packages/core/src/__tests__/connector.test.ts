@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createProjectModules, getConnectorTypes, type ConnectorModule } from "../index.js";
+import { createProjectModules, createConnectorRegistry, type ConnectorModule } from "../index.js";
 import { createFilesystemStorage } from "../filesystem-storage.js";
 import type { StorageProvider } from "../storage-provider.js";
 
@@ -278,12 +278,37 @@ describe("connector", () => {
     });
   });
 
-  describe("getConnectorTypes", () => {
-    it("returns types for LangGraph", () => {
-      const types = getConnectorTypes();
+  describe("ConnectorRegistry", () => {
+    it("lists built-in connector types including LangGraph", () => {
+      const registry = createConnectorRegistry();
+      const types = registry.list();
 
-      expect(types.langgraph).toBeDefined();
-      expect(types.langgraph).toContain("LangGraph");
+      expect(types).toHaveLength(1);
+      expect(types[0].type).toBe("langgraph");
+      expect(types[0].label).toBe("LangGraph");
+      expect(types[0].builtin).toBe(true);
+      expect(types[0].configSchema).toBeDefined();
+    });
+
+    it("gets LangGraph definition by type", () => {
+      const registry = createConnectorRegistry();
+      const def = registry.get("langgraph");
+
+      expect(def).toBeDefined();
+      expect(def?.type).toBe("langgraph");
+      expect(def?.strategy).toBeDefined();
+    });
+
+    it("returns undefined for unknown type", () => {
+      const registry = createConnectorRegistry();
+      expect(registry.get("unknown")).toBeUndefined();
+    });
+
+    it("throws on duplicate registration", () => {
+      const registry = createConnectorRegistry();
+      expect(() =>
+        registry.register({ type: "langgraph", label: "Dup", strategy: {} as never })
+      ).toThrow('Connector type "langgraph" is already registered');
     });
   });
 

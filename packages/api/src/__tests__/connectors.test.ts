@@ -100,7 +100,12 @@ describe("connectors routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.langgraph).toBeDefined();
+      expect(Array.isArray(body)).toBe(true);
+      const langgraph = body.find((t: { type: string }) => t.type === "langgraph");
+      expect(langgraph).toBeDefined();
+      expect(langgraph.label).toBe("LangGraph");
+      expect(langgraph.builtin).toBe(true);
+      expect(langgraph.configSchema).toBeDefined();
 
       await server.close();
     });

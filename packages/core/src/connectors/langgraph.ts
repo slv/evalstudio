@@ -1,4 +1,5 @@
 import type { Connector, ConnectorInvokeInput, LangGraphConnectorConfig } from "../connector.js";
+import type { ConnectorDefinition } from "../connector-registry.js";
 import type { Message, TokensUsage } from "../types.js";
 import { buildRequestHeaders, type ConnectorRequestConfig, type ConnectorResponseMetadata, type ConnectorStrategy } from "./base.js";
 
@@ -169,4 +170,29 @@ export const langGraphStrategy: ConnectorStrategy = {
 
     return result;
   },
+};
+
+/**
+ * LangGraph connector definition — built-in connector type.
+ * Wraps the strategy with metadata for the registry and UI.
+ */
+export const langGraphDefinition: ConnectorDefinition = {
+  type: "langgraph",
+  label: "LangGraph",
+  description: "LangGraph Dev API connector for langgraph-backed agents",
+  configSchema: {
+    type: "object",
+    properties: {
+      assistantId: {
+        type: "string",
+        description: "The assistant ID to invoke",
+      },
+      configurable: {
+        type: "object",
+        description: "Extra configurable values passed in config.configurable",
+      },
+    },
+    required: ["assistantId"],
+  },
+  strategy: langGraphStrategy,
 };

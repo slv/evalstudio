@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import {
   createProjectModules,
-  getConnectorTypes,
   type ConnectorConfig,
   type ConnectorType,
 } from "@evalstudio/core";
@@ -28,18 +27,18 @@ interface ConnectorParams {
 
 export async function connectorsRoute(fastify: FastifyInstance) {
   fastify.get("/connectors", async (request) => {
-    const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+    const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
     return await connectors.list();
   });
 
   fastify.get("/connectors/types", async () => {
-    return getConnectorTypes();
+    return fastify.connectorRegistry.list();
   });
 
   fastify.get<{ Params: ConnectorParams }>(
     "/connectors/:id",
     async (request, reply) => {
-      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
       const connector = await connectors.get(request.params.id);
 
       if (!connector) {
@@ -72,7 +71,7 @@ export async function connectorsRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
         const connector = await connectors.create({
           name,
           type,
@@ -98,7 +97,7 @@ export async function connectorsRoute(fastify: FastifyInstance) {
       const { name, type, baseUrl, headers, config } = request.body;
 
       try {
-        const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
         const connector = await connectors.update(request.params.id, {
           name,
           type,
@@ -126,7 +125,7 @@ export async function connectorsRoute(fastify: FastifyInstance) {
   fastify.delete<{ Params: ConnectorParams }>(
     "/connectors/:id",
     async (request, reply) => {
-      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
       const deleted = await connectors.delete(request.params.id);
 
       if (!deleted) {
@@ -142,7 +141,7 @@ export async function connectorsRoute(fastify: FastifyInstance) {
   fastify.post<{ Params: ConnectorParams }>(
     "/connectors/:id/test",
     async (request) => {
-      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id);
+      const { connectors } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
       const result = await connectors.test(request.params.id);
       return result;
     }

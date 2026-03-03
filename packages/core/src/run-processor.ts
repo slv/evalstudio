@@ -19,6 +19,7 @@ import { generatePersonaMessage } from "./persona-generator.js";
 import { createProjectModules, type ProjectModules } from "./module-factory.js";
 import type { StorageProvider } from "./storage-provider.js";
 import type { EvaluatorRegistry } from "./evaluator-registry.js";
+import type { ConnectorRegistry } from "./connector-registry.js";
 
 export type { RunStatus };
 
@@ -33,6 +34,8 @@ export interface RunProcessorOptions {
   maxConcurrent?: number;
   /** Evaluator registry for custom evaluators (optional — if not provided, only LLM-as-judge runs) */
   evaluatorRegistry?: EvaluatorRegistry;
+  /** Connector registry for connector type resolution (optional — defaults to built-in connectors) */
+  connectorRegistry?: ConnectorRegistry;
   /** Callback for status changes */
   onStatusChange?: (runId: string, status: RunStatus, run: Run) => void;
   /** Callback when a run starts */
@@ -49,6 +52,7 @@ interface InternalOptions {
   pollIntervalMs: number;
   maxConcurrent: number;
   evaluatorRegistry?: EvaluatorRegistry;
+  connectorRegistry?: ConnectorRegistry;
   onStatusChange?: (runId: string, status: RunStatus, run: Run) => void;
   onRunStart?: (run: Run) => void;
   onRunComplete?: (run: Run, result: ConnectorInvokeResult) => void;
@@ -223,7 +227,7 @@ export class RunProcessor {
     for (const project of projects) {
       if (remaining <= 0) break;
 
-      const modules = createProjectModules(storage, project.id);
+      const modules = createProjectModules(storage, project.id, this.options.connectorRegistry);
       const queuedRuns = await modules.runs.list({ status: "queued", limit: remaining });
 
       for (const run of queuedRuns) {
@@ -622,7 +626,7 @@ export class RunProcessor {
 
     for (const project of projects) {
       try {
-        const modules = createProjectModules(storage, project.id);
+        const modules = createProjectModules(storage, project.id, this.options.connectorRegistry);
         const stuckRuns = await modules.runs.list({ status: "running" });
         for (const run of stuckRuns) {
           await modules.runs.update(run.id, { status: "queued" });

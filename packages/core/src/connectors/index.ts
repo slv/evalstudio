@@ -2,17 +2,21 @@
  * Connector implementations
  *
  * This directory contains the strategy implementations for each connector type.
- * Each connector is responsible for:
- * - Building test and invoke requests
- * - Parsing responses from the target system
+ * Each connector type provides a ConnectorDefinition that includes:
+ * - Type metadata (type, label, description, configSchema)
+ * - A ConnectorStrategy for building requests and parsing responses
  *
- * To add a new connector type:
- * 1. Create a new file in this directory (e.g., myconnector.ts)
- * 2. Implement the ConnectorStrategy interface
- * 3. Export the strategy
- * 4. Add it to the connectorStrategies registry in connector.ts
+ * Built-in connector definitions are collected in the builtinConnectors array
+ * and registered into the ConnectorRegistry at startup.
  */
 
 export type { ConnectorStrategy, ConnectorRequestConfig, ConnectorResponseMetadata } from "./base.js";
 export { buildRequestHeaders } from "./base.js";
-export { langGraphStrategy } from "./langgraph.js";
+export { langGraphStrategy, langGraphDefinition } from "./langgraph.js";
+
+import type { ConnectorDefinition } from "../connector-registry.js";
+import { langGraphDefinition } from "./langgraph.js";
+
+export const builtinConnectors: ConnectorDefinition[] = [
+  langGraphDefinition,
+];

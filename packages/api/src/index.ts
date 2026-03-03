@@ -8,7 +8,9 @@ import {
   resolveWorkspace,
   createStorageProvider,
   createEvaluatorRegistry,
+  createConnectorRegistry,
   type EvaluatorRegistry,
+  type ConnectorRegistry,
   type ProjectContext,
   type StorageProvider,
 } from "@evalstudio/core";
@@ -23,11 +25,12 @@ import { imagesRoute } from "./routes/images.js";
 import { evaluatorTypesRoute } from "./routes/evaluator-types.js";
 import { statusRoute } from "./routes/status.js";
 
-// Extend Fastify with storage provider, evaluator registry, and project context
+// Extend Fastify with storage provider, registries, and project context
 declare module "fastify" {
   interface FastifyInstance {
     storage: StorageProvider;
     evaluatorRegistry: EvaluatorRegistry;
+    connectorRegistry: ConnectorRegistry;
   }
   interface FastifyRequest {
     projectCtx: ProjectContext | null;
@@ -71,9 +74,13 @@ export async function createServer(options: ServerOptions = {}) {
     console.log(`[Evaluators] Loaded ${customCount} custom evaluator(s)`);
   }
 
-  // Decorate instance with storage provider, evaluator registry, and request with projectCtx
+  // Create connector registry with built-in connector types
+  const connectorRegistry = createConnectorRegistry();
+
+  // Decorate instance with storage provider, registries, and request with projectCtx
   fastify.decorate("storage", storage);
   fastify.decorate("evaluatorRegistry", evaluatorRegistry);
+  fastify.decorate("connectorRegistry", connectorRegistry);
   fastify.decorateRequest("projectCtx", null);
 
   // Handle "no project found" errors with a helpful message
@@ -147,6 +154,7 @@ export async function createServer(options: ServerOptions = {}) {
       storage,
       pollIntervalMs: pollMs,
       evaluatorRegistry,
+      connectorRegistry,
       ...(maxConcurrent !== undefined ? { maxConcurrent } : {}),
       onRunStart: (run) => {
         console.log(`[RunProcessor] Starting run ${run.id}`);

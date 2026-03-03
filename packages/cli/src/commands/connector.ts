@@ -3,12 +3,10 @@ import {
   resolveProjectFromCwd,
   createProjectModules,
   createStorageProvider,
-  getConnectorTypes,
+  createConnectorRegistry,
   type ConnectorType,
   type LangGraphConnectorConfig,
 } from "@evalstudio/core";
-
-const validConnectorTypes: ConnectorType[] = ["langgraph"];
 
 export const connectorCommand = new Command("connector")
   .description("Manage connectors for bridging EvalStudio to external APIs")
@@ -36,9 +34,11 @@ export const connectorCommand = new Command("connector")
           }
         ) => {
           try {
-            if (!validConnectorTypes.includes(options.type as ConnectorType)) {
+            const registry = createConnectorRegistry();
+            const validTypes = registry.list().map(t => t.type);
+            if (!validTypes.includes(options.type)) {
               console.error(
-                `Error: Invalid type "${options.type}". Must be one of: ${validConnectorTypes.join(", ")}`
+                `Error: Invalid type "${options.type}". Must be one of: ${validTypes.join(", ")}`
               );
               process.exit(1);
             }
@@ -194,12 +194,14 @@ export const connectorCommand = new Command("connector")
             process.exit(1);
           }
 
+          const registry = createConnectorRegistry();
+          const validTypes = registry.list().map(t => t.type);
           if (
             options.type &&
-            !validConnectorTypes.includes(options.type as ConnectorType)
+            !validTypes.includes(options.type)
           ) {
             console.error(
-              `Error: Invalid type "${options.type}". Must be one of: ${validConnectorTypes.join(", ")}`
+              `Error: Invalid type "${options.type}". Must be one of: ${validTypes.join(", ")}`
             );
             process.exit(1);
           }
@@ -291,16 +293,17 @@ export const connectorCommand = new Command("connector")
       .description("List available connector types")
       .option("--json", "Output as JSON")
       .action((options: { json?: boolean }) => {
-        const types = getConnectorTypes();
+        const registry = createConnectorRegistry();
+        const types = registry.list();
 
         if (options.json) {
           console.log(JSON.stringify(types, null, 2));
         } else {
           console.log("Available Connector Types:");
           console.log("--------------------------");
-          for (const [type, description] of Object.entries(types)) {
-            console.log(`  ${type}`);
-            console.log(`    ${description}`);
+          for (const t of types) {
+            console.log(`  ${t.type}${t.builtin ? " (built-in)" : ""}`);
+            if (t.description) console.log(`    ${t.description}`);
           }
         }
       })

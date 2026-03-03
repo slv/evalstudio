@@ -1,6 +1,7 @@
 import { createPersonaModule, type PersonaModule, type Persona } from "./persona.js";
 import { createScenarioModule, type ScenarioModule, type Scenario } from "./scenario.js";
 import { createConnectorModule, type ConnectorModule, type Connector } from "./connector.js";
+import { createConnectorRegistry, type ConnectorRegistry } from "./connector-registry.js";
 import { createExecutionModule, type ExecutionModule, type Execution } from "./execution.js";
 import { createEvalModule, type EvalModule, type Eval } from "./eval.js";
 import { createRunModule, type RunModule, type Run } from "./run.js";
@@ -24,7 +25,7 @@ export interface ProjectModules {
  * Repositories are created via the StorageProvider — entity modules never know
  * whether they're backed by JSON files, PostgreSQL, or anything else.
  */
-export function createProjectModules(storage: StorageProvider, projectId: string): ProjectModules {
+export function createProjectModules(storage: StorageProvider, projectId: string, connectorRegistry?: ConnectorRegistry): ProjectModules {
   const personaRepo = storage.createRepository<Persona>("personas", projectId);
   const scenarioRepo = storage.createRepository<Scenario>("scenarios", projectId);
   const connectorRepo = storage.createRepository<Connector>("connectors", projectId);
@@ -34,7 +35,8 @@ export function createProjectModules(storage: StorageProvider, projectId: string
 
   const personaMod = createPersonaModule(personaRepo);
   const scenarioMod = createScenarioModule(scenarioRepo);
-  const connectorMod = createConnectorModule(connectorRepo);
+  const registry = connectorRegistry ?? createConnectorRegistry();
+  const connectorMod = createConnectorModule(connectorRepo, registry);
   const executionMod = createExecutionModule(executionRepo);
 
   const evalMod = createEvalModule(evalRepo, {
