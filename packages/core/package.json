@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Core evaluation engine for testing chatbots, AI agents, and REST APIs",
   "type": "module",
   "main": "./dist/index.js",

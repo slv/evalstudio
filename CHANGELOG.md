@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-22
+
 ### Added
 
 - **Evaluator charts on scenario stats page** — New "Evaluators" section in the scenario Stats tab with one chart per evaluator (excluding token-usage, already shown in Trends). Assertions default to green bar charts (pass rate %), metrics default to blue scatter charts (per-run values with red avg line). Chart type is configurable per evaluator via the `chartType` field on `EvaluatorDefinition` (`"line"`, `"bar"`, or `"scatter"`).
