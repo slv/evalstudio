@@ -89,7 +89,7 @@ Published to npm: `@evalstudio/core`, `@evalstudio/cli`, `@evalstudio/api`, and 
 ### Setup
 
 ```bash
-git clone https://github.com/Treatwell-AI/evalstudio.git
+git clone https://github.com/slv/evalstudio.git
 cd evalstudio
 pnpm install
 pnpm build

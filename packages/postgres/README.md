@@ -1,6 +1,6 @@
 # @evalstudio/postgres
 
-PostgreSQL storage backend for [EvalStudio](https://github.com/Treatwell-AI/evalstudio). Replaces the default filesystem storage with PostgreSQL for team environments, production deployments, and horizontal scaling.
+PostgreSQL storage backend for [EvalStudio](https://github.com/slv/evalstudio). Replaces the default filesystem storage with PostgreSQL for team environments, production deployments, and horizontal scaling.
 
 ## Setting Up an EvalStudio Server
 

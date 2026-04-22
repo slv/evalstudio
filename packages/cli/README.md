@@ -1,6 +1,6 @@
 # @evalstudio/cli
 
-Command-line interface for [EvalStudio](https://github.com/Treatwell-AI/evalstudio) — a flexible evaluation platform for testing chatbots, AI agents, and REST APIs.
+Command-line interface for [EvalStudio](https://github.com/slv/evalstudio) — a flexible evaluation platform for testing chatbots, AI agents, and REST APIs.
 
 ## Quick Start
 
@@ -135,7 +135,7 @@ All commands support `--json` for machine-readable output, useful for scripting 
 ### Clone and install
 
 ```bash
-git clone https://github.com/Treatwell-AI/evalstudio.git
+git clone https://github.com/slv/evalstudio.git
 cd evalstudio
 pnpm install
 ```

@@ -24,7 +24,7 @@ npx @evalstudio/cli status
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/Treatwell-AI/evalstudio.git
+git clone https://github.com/slv/evalstudio.git
 cd evalstudio
 pnpm install
 pnpm build

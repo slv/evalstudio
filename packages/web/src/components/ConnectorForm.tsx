@@ -15,7 +15,7 @@ const builtinTypeContent: Record<string, React.ReactNode> = {
       Connect to a LangGraph agent running on a local dev server or deployed
       endpoint.{" "}
       <a
-        href="https://Treatwell-AI.github.io/evalstudio/guides/langgraph-setup"
+        href="https://slv.github.io/evalstudio/guides/langgraph-setup"
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}

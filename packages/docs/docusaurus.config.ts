@@ -7,10 +7,10 @@ const config: Config = {
   tagline: "A flexible evaluation platform for testing chatbots, AI agents, and REST APIs",
   favicon: "img/favicon.ico",
 
-  url: "https://Treatwell-AI.github.io",
+  url: "https://slv.github.io",
   baseUrl: "/evalstudio/",
 
-  organizationName: "Treatwell-AI",
+  organizationName: "slv",
   projectName: "evalstudio",
   trailingSlash: false,
 
@@ -59,7 +59,7 @@ const config: Config = {
           label: "Guides",
         },
         {
-          href: "https://github.com/Treatwell-AI/evalstudio",
+          href: "https://github.com/slv/evalstudio",
           label: "GitHub",
           position: "right",
         },
