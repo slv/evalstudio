@@ -65,6 +65,7 @@ interface RunContext {
   modules: ProjectModules;
   run: Run;
   connectorId: string;
+  connectorRegistry: ConnectorRegistry;
   llmProvider: LLMProvider;
   evaluationModel?: string;
   personaModel?: string;
@@ -235,7 +236,7 @@ export class RunProcessor {
     for (const project of projects) {
       if (remaining <= 0) break;
 
-      const modules = createProjectModules(storage, project.id, this.options.connectorRegistry ?? builtinFallbackRegistry());
+      const modules = createProjectModules(storage, project.id);
       const queuedRuns = await modules.runs.list({ status: "queued", limit: remaining });
 
       for (const run of queuedRuns) {
@@ -390,6 +391,7 @@ export class RunProcessor {
       modules,
       run,
       connectorId,
+      connectorRegistry: this.options.connectorRegistry ?? builtinFallbackRegistry(),
       llmProvider,
       evaluationModel,
       personaModel,
@@ -404,7 +406,7 @@ export class RunProcessor {
   // ── Evaluation loop ──────────────────────────────────────────────────────
 
   private async executeEvaluationLoop(ctx: RunContext): Promise<void> {
-    const { modules, run, connectorId, scenario, persona, maxMessages, hasLLMJudge, resolvedEvaluators } = ctx;
+    const { modules, run, connectorId, connectorRegistry, scenario, persona, maxMessages, hasLLMJudge, resolvedEvaluators } = ctx;
     const state = new LoopState(run.messages);
     const failureMode = scenario.failureCriteriaMode ?? "on_max_messages";
 
@@ -419,7 +421,7 @@ export class RunProcessor {
         runId: run.threadId ?? run.id,
         seenMessageIds: state.seenMessageIds,
         extraHeaders: persona?.headers,
-      });
+      }, connectorRegistry);
 
       if (!result.success || !result.messages || result.messages.length === 0) {
         throw new Error(result.error || "No response messages from connector");
@@ -634,7 +636,7 @@ export class RunProcessor {
 
     for (const project of projects) {
       try {
-        const modules = createProjectModules(storage, project.id, this.options.connectorRegistry ?? builtinFallbackRegistry());
+        const modules = createProjectModules(storage, project.id);
         const stuckRuns = await modules.runs.list({ status: "running" });
         for (const run of stuckRuns) {
           await modules.runs.update(run.id, { status: "queued" });

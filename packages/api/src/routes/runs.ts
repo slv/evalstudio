@@ -46,7 +46,7 @@ interface RunQuerystring {
 
 export async function runsRoute(fastify: FastifyInstance) {
   fastify.get<{ Querystring: RunQuerystring }>("/runs", async (request) => {
-    const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+    const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
     const { evalId, scenarioId, personaId, connectorId, status } = request.query;
 
     if (evalId) {
@@ -77,7 +77,7 @@ export async function runsRoute(fastify: FastifyInstance) {
   });
 
   fastify.get<{ Params: RunParams }>("/runs/:id", async (request, reply) => {
-    const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+    const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
     const run = await runs.get(request.params.id);
 
     if (!run) {
@@ -97,7 +97,7 @@ export async function runsRoute(fastify: FastifyInstance) {
     }
 
     try {
-      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
       const created = await runs.createMany({ evalId });
       reply.code(201);
       return created;
@@ -131,7 +131,7 @@ export async function runsRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
         const run = await runs.createPlayground({
           scenarioId,
           connectorId,
@@ -165,7 +165,7 @@ export async function runsRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
         const run = await runs.createChatRun({ connectorId });
         reply.code(201);
         return run;
@@ -195,8 +195,8 @@ export async function runsRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
-        const result = await runs.sendChatMessage(request.params.id, { content: content.trim() });
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const result = await runs.sendChatMessage(request.params.id, { content: content.trim() }, fastify.connectorRegistry);
         return result;
       } catch (error) {
         if (error instanceof Error) {
@@ -227,7 +227,7 @@ export async function runsRoute(fastify: FastifyInstance) {
         error,
       } = request.body;
 
-      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
       const run = await runs.update(request.params.id, {
         status,
         startedAt,
@@ -254,7 +254,7 @@ export async function runsRoute(fastify: FastifyInstance) {
     "/runs/:id/retry",
     async (request, reply) => {
       try {
-        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+        const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
         const run = await runs.retry(request.params.id);
 
         if (!run) {
@@ -276,7 +276,7 @@ export async function runsRoute(fastify: FastifyInstance) {
   fastify.delete<{ Params: RunParams }>(
     "/runs/:id",
     async (request, reply) => {
-      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
+      const { runs } = createProjectModules(fastify.storage, request.projectCtx!.id);
       const deleted = await runs.delete(request.params.id);
 
       if (!deleted) {

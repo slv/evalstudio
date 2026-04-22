@@ -4,6 +4,7 @@ import type { EvalModule, Message } from "./eval.js";
 import type { ScenarioModule } from "./scenario.js";
 import type { PersonaModule } from "./persona.js";
 import type { ConnectorModule } from "./connector.js";
+import type { ConnectorRegistry } from "./connector-registry.js";
 import type { ExecutionModule } from "./execution.js";
 
 /**
@@ -230,7 +231,7 @@ export function createRunModule(repo: Repository<Run>, deps: RunModuleDeps) {
       return run;
     },
 
-    async sendChatMessage(id: string, input: ChatMessageInput): Promise<ChatMessageResult> {
+    async sendChatMessage(id: string, input: ChatMessageInput, registry: ConnectorRegistry): Promise<ChatMessageResult> {
       const run = await repo.findById(id);
       if (!run) {
         throw new Error(`Run with id "${id}" not found`);
@@ -248,7 +249,7 @@ export function createRunModule(repo: Repository<Run>, deps: RunModuleDeps) {
       const invokeResult = await connectors.invoke(run.connectorId, {
         messages: allMessages,
         runId: run.id,
-      });
+      }, registry);
 
       const responseMessages = invokeResult.messages?.filter(
         (m) => m.role === "assistant" || m.role === "tool"

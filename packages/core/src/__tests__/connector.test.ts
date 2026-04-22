@@ -314,9 +314,11 @@ describe("connector", () => {
 
   describe("test", () => {
     const mockFetch = vi.fn();
+    let registry: Awaited<ReturnType<typeof createConnectorRegistry>>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       vi.stubGlobal("fetch", mockFetch);
+      registry = await createConnectorRegistry("/tmp");
     });
 
     afterEach(() => {
@@ -325,7 +327,7 @@ describe("connector", () => {
     });
 
     it("returns error for non-existent connector", async () => {
-      const result = await mod.test("non-existent-id");
+      const result = await mod.test("non-existent-id", registry);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain("not found");
@@ -347,7 +349,7 @@ describe("connector", () => {
           JSON.stringify({ version: "0.1.0" }),
       });
 
-      const result = await mod.test(connector.id);
+      const result = await mod.test(connector.id, registry);
 
       expect(result.success).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -377,7 +379,7 @@ describe("connector", () => {
         text: async () => JSON.stringify({ version: "0.1.0" }),
       });
 
-      await mod.test(connector.id);
+      await mod.test(connector.id, registry);
 
       expect(mockFetch).toHaveBeenCalledWith(
         "http://localhost:8123/info",
@@ -409,7 +411,7 @@ describe("connector", () => {
         text: async () => JSON.stringify({ version: "0.1.0" }),
       });
 
-      await mod.test(connector.id);
+      await mod.test(connector.id, registry);
 
       expect(mockFetch).toHaveBeenCalledWith(
         "http://localhost:8123/info",
@@ -437,7 +439,7 @@ describe("connector", () => {
         text: async () => JSON.stringify({ messages: [] }),
       });
 
-      await mod.test(connector.id);
+      await mod.test(connector.id, registry);
 
       expect(mockFetch).toHaveBeenCalledWith(
         "http://localhost:8123/info",
@@ -460,7 +462,7 @@ describe("connector", () => {
 
       mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-      const result = await mod.test(connector.id);
+      const result = await mod.test(connector.id, registry);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe("Network error");

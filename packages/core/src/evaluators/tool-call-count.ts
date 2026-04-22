@@ -18,7 +18,7 @@ export const toolCallCountEvaluator: EvaluatorDefinition = {
     let count = 0;
     const toolNames: string[] = [];
 
-    for (const msg of ctx.lastInvocation.messages) {
+    for (const msg of ctx.messages) {
       if (msg.role === "assistant" && msg.tool_calls) {
         count += msg.tool_calls.length;
         for (const tc of msg.tool_calls) {
@@ -32,7 +32,7 @@ export const toolCallCountEvaluator: EvaluatorDefinition = {
       value: count,
       reason:
         count === 0
-          ? "No tool calls in this turn"
+          ? "No tool calls in conversation"
           : `${count} tool call(s): ${toolNames.join(", ")}`,
       metadata: { toolCallCount: count, toolNames },
     };

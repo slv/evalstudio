@@ -82,7 +82,7 @@ async function withTiming<T>(
 // Factory: project-scoped connector module
 // ============================================================================
 
-export function createConnectorModule(repo: Repository<Connector>, registry: ConnectorRegistry) {
+export function createConnectorModule(repo: Repository<Connector>) {
   return {
     async create(input: CreateConnectorInput): Promise<Connector> {
       const duplicates = await repo.findBy({ name: input.name });
@@ -148,7 +148,7 @@ export function createConnectorModule(repo: Repository<Connector>, registry: Con
       return repo.deleteById(id);
     },
 
-    async test(id: string): Promise<ConnectorTestResult> {
+    async test(id: string, registry: ConnectorRegistry): Promise<ConnectorTestResult> {
       const connector = await this.get(id);
       if (!connector) {
         return { success: false, latencyMs: 0, error: `Connector with id "${id}" not found` };
@@ -189,7 +189,7 @@ export function createConnectorModule(repo: Repository<Connector>, registry: Con
       }
     },
 
-    async invoke(id: string, input: ConnectorInvokeInput): Promise<ConnectorInvokeResult> {
+    async invoke(id: string, input: ConnectorInvokeInput, registry: ConnectorRegistry): Promise<ConnectorInvokeResult> {
       const connector = await this.get(id);
       if (!connector) {
         return { success: false, latencyMs: 0, error: `Connector with id "${id}" not found` };
