@@ -11,7 +11,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Guides",
-      items: ["guides/langgraph-setup", "guides/custom-evaluators"],
+      items: ["guides/langgraph-setup", "guides/custom-evaluators", "guides/custom-connectors"],
     },
     {
       type: "html",
@@ -42,6 +42,7 @@ const sidebars: SidebarsConfig = {
         "cli/persona",
         "cli/scenario",
         "cli/eval",
+        "cli/run",
         "cli/llm-provider",
         "cli/connector",
         "cli/serve",

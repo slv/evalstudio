@@ -1,0 +1,13 @@
+[
+  {
+    "id": "0df1f38c-970f-4b3e-ac72-9929b7bd3dd9",
+    "name": "Echo Bot",
+    "type": "echo-bot",
+    "baseUrl": "http://localhost:4000",
+    "config": {
+      "prefix": "[prefix]"
+    },
+    "createdAt": "2026-04-22T12:24:32.535Z",
+    "updatedAt": "2026-04-22T12:32:02.944Z"
+  }
+]

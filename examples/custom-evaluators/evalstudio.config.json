@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "name": "Demo - Custom Evaluators",
+  "evaluators": ["./evaluators.js"],
+  "projects": [
+    {
+      "id": "546cd461-8571-482f-8ec2-01d91d1e65c8",
+      "name": "My Project"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "scripts": {
+    "mock": "node mock-server.js"
+  },
+  "dependencies": {
+    "@evalstudio/core": "latest"
+  }
+}

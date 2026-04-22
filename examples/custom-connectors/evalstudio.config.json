@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "name": "Demo - Custom Connectors",
+  "connectors": ["./echo-connector.js"],
+  "projects": [
+    {
+      "id": "580b1cc5-5133-4dc2-be01-b8eda50efbfc",
+      "name": "My Project"
+    }
+  ]
+}
