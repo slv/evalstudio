@@ -1,6 +1,6 @@
 {
   "name": "@evalstudio/cli",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Command-line interface for EvalStudio",
   "type": "module",
   "bin": {

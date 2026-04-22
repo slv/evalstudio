@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "PostgreSQL storage backend for EvalStudio",
   "type": "module",
   "main": "./dist/index.js",
