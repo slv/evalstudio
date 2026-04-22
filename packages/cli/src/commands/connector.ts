@@ -34,7 +34,8 @@ export const connectorCommand = new Command("connector")
           }
         ) => {
           try {
-            const registry = createConnectorRegistry();
+            const ctx = resolveProjectFromCwd();
+            const registry = await createConnectorRegistry(ctx.workspaceDir);
             const validTypes = registry.list().map(t => t.type);
             if (!validTypes.includes(options.type)) {
               console.error(
@@ -55,7 +56,6 @@ export const connectorCommand = new Command("connector")
 
             const headers = parseHeaders(options.header);
 
-            const ctx = resolveProjectFromCwd();
             const storage = await createStorageProvider(ctx.workspaceDir);
             const { connectors } = createProjectModules(storage, ctx.id);
 
@@ -194,7 +194,7 @@ export const connectorCommand = new Command("connector")
             process.exit(1);
           }
 
-          const registry = createConnectorRegistry();
+          const registry = await createConnectorRegistry(ctx.workspaceDir);
           const validTypes = registry.list().map(t => t.type);
           if (
             options.type &&
@@ -292,8 +292,9 @@ export const connectorCommand = new Command("connector")
     new Command("types")
       .description("List available connector types")
       .option("--json", "Output as JSON")
-      .action((options: { json?: boolean }) => {
-        const registry = createConnectorRegistry();
+      .action(async (options: { json?: boolean }) => {
+        const ctx = resolveProjectFromCwd();
+        const registry = await createConnectorRegistry(ctx.workspaceDir);
         const types = registry.list();
 
         if (options.json) {

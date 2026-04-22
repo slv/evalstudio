@@ -85,6 +85,8 @@ export interface WorkspaceConfig extends ProjectConfig {
   storage?: StorageConfig;
   /** Custom evaluator paths (relative files or npm package names). */
   evaluators?: string[];
+  /** Custom connector paths (relative files or npm package names). */
+  connectors?: string[];
   projects: ProjectEntry[];
 }
 

@@ -74,8 +74,12 @@ export async function createServer(options: ServerOptions = {}) {
     console.log(`[Evaluators] Loaded ${customCount} custom evaluator(s)`);
   }
 
-  // Create connector registry with built-in connector types
-  const connectorRegistry = createConnectorRegistry();
+  // Create connector registry with built-in + custom connectors from config
+  const connectorRegistry = await createConnectorRegistry(workspaceDir);
+  const customConnectorCount = connectorRegistry.list().filter(c => !c.builtin).length;
+  if (customConnectorCount > 0) {
+    console.log(`[Connectors] Loaded ${customConnectorCount} custom connector(s)`);
+  }
 
   // Decorate instance with storage provider, registries, and request with projectCtx
   fastify.decorate("storage", storage);

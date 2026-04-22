@@ -1,7 +1,16 @@
 import { createPersonaModule, type PersonaModule, type Persona } from "./persona.js";
 import { createScenarioModule, type ScenarioModule, type Scenario } from "./scenario.js";
 import { createConnectorModule, type ConnectorModule, type Connector } from "./connector.js";
-import { createConnectorRegistry, type ConnectorRegistry } from "./connector-registry.js";
+import { ConnectorRegistry } from "./connector-registry.js";
+import { builtinConnectors } from "./connectors/index.js";
+
+function createBuiltinRegistry(): ConnectorRegistry {
+  const registry = new ConnectorRegistry();
+  for (const def of builtinConnectors) {
+    registry.register(def, true);
+  }
+  return registry;
+}
 import { createExecutionModule, type ExecutionModule, type Execution } from "./execution.js";
 import { createEvalModule, type EvalModule, type Eval } from "./eval.js";
 import { createRunModule, type RunModule, type Run } from "./run.js";
@@ -25,7 +34,7 @@ export interface ProjectModules {
  * Repositories are created via the StorageProvider — entity modules never know
  * whether they're backed by JSON files, PostgreSQL, or anything else.
  */
-export function createProjectModules(storage: StorageProvider, projectId: string, connectorRegistry?: ConnectorRegistry): ProjectModules {
+export function createProjectModules(storage: StorageProvider, projectId: string, connectorRegistry: ConnectorRegistry = createBuiltinRegistry()): ProjectModules {
   const personaRepo = storage.createRepository<Persona>("personas", projectId);
   const scenarioRepo = storage.createRepository<Scenario>("scenarios", projectId);
   const connectorRepo = storage.createRepository<Connector>("connectors", projectId);
@@ -35,7 +44,7 @@ export function createProjectModules(storage: StorageProvider, projectId: string
 
   const personaMod = createPersonaModule(personaRepo);
   const scenarioMod = createScenarioModule(scenarioRepo);
-  const registry = connectorRegistry ?? createConnectorRegistry();
+  const registry = connectorRegistry;
   const connectorMod = createConnectorModule(connectorRepo, registry);
   const executionMod = createExecutionModule(executionRepo);
 

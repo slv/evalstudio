@@ -303,3 +303,7 @@ export default defineEvaluator({
 3. **Assertions**: if any assertion returns `success: false`, the run fails immediately
 4. **Metrics**: values are recorded in `run.output.metrics` (e.g., `{ "tool-call-count": 3 }`) and `run.output.evaluatorResults[]`
 5. Results are visible in the Web UI on the run detail page
+
+## See Also
+
+- [Custom Connectors](./custom-connectors.md) — add support for new agent protocols and APIs

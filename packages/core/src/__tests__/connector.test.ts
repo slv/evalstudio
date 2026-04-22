@@ -279,8 +279,8 @@ describe("connector", () => {
   });
 
   describe("ConnectorRegistry", () => {
-    it("lists built-in connector types including LangGraph", () => {
-      const registry = createConnectorRegistry();
+    it("lists built-in connector types including LangGraph", async () => {
+      const registry = await createConnectorRegistry("/tmp");
       const types = registry.list();
 
       expect(types).toHaveLength(1);
@@ -290,8 +290,8 @@ describe("connector", () => {
       expect(types[0].configSchema).toBeDefined();
     });
 
-    it("gets LangGraph definition by type", () => {
-      const registry = createConnectorRegistry();
+    it("gets LangGraph definition by type", async () => {
+      const registry = await createConnectorRegistry("/tmp");
       const def = registry.get("langgraph");
 
       expect(def).toBeDefined();
@@ -299,13 +299,13 @@ describe("connector", () => {
       expect(def?.strategy).toBeDefined();
     });
 
-    it("returns undefined for unknown type", () => {
-      const registry = createConnectorRegistry();
+    it("returns undefined for unknown type", async () => {
+      const registry = await createConnectorRegistry("/tmp");
       expect(registry.get("unknown")).toBeUndefined();
     });
 
-    it("throws on duplicate registration", () => {
-      const registry = createConnectorRegistry();
+    it("throws on duplicate registration", async () => {
+      const registry = await createConnectorRegistry("/tmp");
       expect(() =>
         registry.register({ type: "langgraph", label: "Dup", strategy: {} as never })
       ).toThrow('Connector type "langgraph" is already registered');

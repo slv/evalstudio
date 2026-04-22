@@ -17,11 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Custom evaluators documentation** — New guide covering evaluator authoring, the `EvaluatorContext` API, `isFinal` pattern for final-turn-only evaluators, config-based loading, and npm package distribution.
 - **Evaluator test suite** — 41 new tests covering `runEvaluators`, `EvaluatorRegistry`, `defineEvaluator`, config-based loading, and run-processor integration with custom evaluators.
 
+- **Custom connector plugin system** — Declare custom connector types in `evalstudio.config.json` via the new `connectors` field (relative paths or npm packages). They are loaded at startup by the API server and CLI. Use `defineConnector()` to author connector modules with a strategy that handles request building and response parsing for any agent protocol.
+- **`ConnectorRegistry` and `defineConnector()`** — New `ConnectorRegistry` class mirrors `EvaluatorRegistry`. Built-in LangGraph connector is registered via `langGraphDefinition`. `createConnectorRegistry(workspaceDir)` is an async factory that loads built-ins and any custom connectors from config.
+- **Dynamic "Add Agent" wizard** — The Add Agent form is now a two-step wizard: step 1 picks a connector type (built-in / custom sections), step 2 renders config fields dynamically from the type's `configSchema`. New `ConnectorConfigFields` component is shared between the create wizard and the agent Settings tab.
+- **Custom connectors documentation** — New guide covering connector authoring, the `ConnectorStrategy` interface, `configSchema`→UI field mapping, connector packs, and npm distribution.
+
 ### Changed
 
 - **Renamed criteria evaluation API** — `evaluateCriteria()` → `runLLMJudge()`, `CriteriaEvaluationResult` → `LLMJudgeResult`, `EvaluateCriteriaInput` → `LLMJudgeInput`. Clarifies that this is the LLM-as-judge system, distinct from custom evaluators.
 - **`runEvaluators()` returns flat results** — Returns `{ evaluatorResults[], metrics{} }` without aggregate success/score/reason fields. The run processor handles aggregation.
 - **Improved error messages for custom evaluator loading** — Suggests `npm install <package>` for missing npm packages, distinguishes built-in vs custom in conflict errors.
+- **`ConnectorType` widened to `string`** — Previously a `"langgraph"` literal union; now an open string validated at registry registration time. Custom connector types are supported without source changes.
+- **`createConnectorRegistry()` is now async** — Takes a `workspaceDir` argument and loads custom connectors from config. `createProjectModules()` falls back to a built-ins-only registry when no registry is passed (for tests and CLI commands that don't need custom types).
 
 ## [0.7.0] - 2026-03-02
 
