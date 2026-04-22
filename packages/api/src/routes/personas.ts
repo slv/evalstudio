@@ -26,14 +26,14 @@ interface PersonaParams {
 
 export async function personasRoute(fastify: FastifyInstance) {
   fastify.get("/personas", async (request) => {
-    const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id);
+    const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
     return await personas.list();
   });
 
   fastify.get<{ Params: PersonaParams }>(
     "/personas/:id",
     async (request, reply) => {
-      const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id);
+      const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
       const persona = await personas.get(request.params.id);
 
       if (!persona) {
@@ -56,7 +56,7 @@ export async function personasRoute(fastify: FastifyInstance) {
       }
 
       try {
-        const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
         const persona = await personas.create({
           name,
           description,
@@ -81,7 +81,7 @@ export async function personasRoute(fastify: FastifyInstance) {
       const { name, description, systemPrompt, imageUrl, headers } = request.body;
 
       try {
-        const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id);
+        const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
         const persona = await personas.update(request.params.id, {
           name,
           description,
@@ -109,7 +109,7 @@ export async function personasRoute(fastify: FastifyInstance) {
   fastify.delete<{ Params: PersonaParams }>(
     "/personas/:id",
     async (request, reply) => {
-      const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id);
+      const { personas } = createProjectModules(fastify.storage, request.projectCtx!.id, fastify.connectorRegistry);
       const deleted = await personas.delete(request.params.id);
 
       if (!deleted) {
@@ -128,7 +128,7 @@ export async function personasRoute(fastify: FastifyInstance) {
     "/personas/:id/generate-image",
     async (request, reply) => {
       const ctx = request.projectCtx!;
-      const { personas } = createProjectModules(fastify.storage, ctx.id);
+      const { personas } = createProjectModules(fastify.storage, ctx.id, fastify.connectorRegistry);
       const persona = await personas.get(request.params.id);
 
       if (!persona) {

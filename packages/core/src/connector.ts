@@ -10,7 +10,7 @@ export interface LangGraphConnectorConfig {
   configurable?: Record<string, unknown>;
 }
 
-export type ConnectorConfig = LangGraphConnectorConfig;
+export type ConnectorConfig = LangGraphConnectorConfig | Record<string, unknown>;
 
 export interface Connector {
   id: string;

@@ -19,7 +19,8 @@ import { generatePersonaMessage } from "./persona-generator.js";
 import { createProjectModules, type ProjectModules } from "./module-factory.js";
 import type { StorageProvider } from "./storage-provider.js";
 import type { EvaluatorRegistry } from "./evaluator-registry.js";
-import type { ConnectorRegistry } from "./connector-registry.js";
+import { ConnectorRegistry } from "./connector-registry.js";
+import { builtinConnectors } from "./connectors/index.js";
 
 export type { RunStatus };
 
@@ -143,6 +144,13 @@ class LoopState {
  * On each poll cycle, it iterates over all projects to find queued runs
  * and executes them using each project's effective config.
  */
+
+function builtinFallbackRegistry(): ConnectorRegistry {
+  const r = new ConnectorRegistry();
+  for (const def of builtinConnectors) r.register(def, true);
+  return r;
+}
+
 export class RunProcessor {
   private running = false;
   private intervalId: NodeJS.Timeout | null = null;
@@ -227,7 +235,7 @@ export class RunProcessor {
     for (const project of projects) {
       if (remaining <= 0) break;
 
-      const modules = createProjectModules(storage, project.id, this.options.connectorRegistry);
+      const modules = createProjectModules(storage, project.id, this.options.connectorRegistry ?? builtinFallbackRegistry());
       const queuedRuns = await modules.runs.list({ status: "queued", limit: remaining });
 
       for (const run of queuedRuns) {
@@ -626,7 +634,7 @@ export class RunProcessor {
 
     for (const project of projects) {
       try {
-        const modules = createProjectModules(storage, project.id, this.options.connectorRegistry);
+        const modules = createProjectModules(storage, project.id, this.options.connectorRegistry ?? builtinFallbackRegistry());
         const stuckRuns = await modules.runs.list({ status: "running" });
         for (const run of stuckRuns) {
           await modules.runs.update(run.id, { status: "queued" });
